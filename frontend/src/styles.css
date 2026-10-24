@@ -41,3 +41,30 @@
 .link-throughput-label > span {display:block;font-size:9px;color:#a3ded5;margin-top:2px;white-space:nowrap;}
 .link-throughput-track {height:3px;background:#35515d;border-radius:3px;overflow:hidden;margin-top:5px;}
 .link-throughput-track > span {height:100%;display:block;background:#64e8cf;transition:width .25s;}
+
+/* v0.4: minimal screen-space annotations (the right inspector holds full details). */
+.world-label.compact-node-label {
+  display:inline-flex; align-items:center; gap:5px; min-width:0; max-width:190px;
+  padding:3px 6px; border-radius:5px; white-space:nowrap;
+  background:rgba(12,30,43,.88); box-shadow:0 2px 7px #0006;
+}
+.compact-node-label strong { font-size:10px; font-weight:700; max-width:112px; overflow:hidden; text-overflow:ellipsis; }
+.compact-node-label .node-qkp-short { font-size:9px; color:#a4ddcf; margin-left:3px; border-left:1px solid #44616c; padding-left:6px; }
+.link-throughput-label.compact-link-label {
+  display:inline-block; min-width:0; width:max-content; max-width:110px; padding:2px 5px;
+  border-radius:4px; font:650 9px 'DM Sans',sans-serif;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  background:rgba(10,27,37,.82); border-color:#426776; box-shadow:none;
+}
+.link-throughput-label.compact-link-label.selected { border-color:#f8cf91; color:#ffdda6; }
+
+/* Trajectory input and playback timestep controls */
+.trajectory-upload { display:flex;flex-direction:column;gap:8px;margin:14px 0;padding:12px;border:1px solid #365164;border-radius:10px;background:rgba(30,56,73,.27); }
+.trajectory-upload strong {font-size:12px;color:#d9e8ed;}
+.trajectory-upload small {font-size:11px;color:#9db1be;overflow-wrap:anywhere;}
+.trajectory-upload-button {display:block;cursor:pointer;text-align:center;padding:8px 12px;border-radius:7px;background:#225b65;color:#e4f8f8;font-size:12px;font-weight:650;}
+.trajectory-upload-button input {display:none;}
+.trajectory-clear {background:transparent;border:0;color:#dfaeae;cursor:pointer;text-align:left;font-size:11px;padding:0;}
+.trajectory-slot-control {display:flex;align-items:center;gap:10px;padding:4px 0 11px;color:#b5c9d1;font-size:12px;flex-wrap:wrap;}
+.trajectory-slot-control select {color:#e3f1f3;background:#172f3e;border:1px solid #3b5b6d;border-radius:6px;padding:5px 7px;}
+.trajectory-slot-control small {opacity:.7;font-size:11px;}

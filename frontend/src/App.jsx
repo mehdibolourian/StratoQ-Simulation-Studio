@@ -61,11 +61,18 @@ export default function App() {
   const [error, setError] = useState('');
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [uploadingTrajectory, setUploadingTrajectory] = useState(false);
   const requestId = useRef(0);
 
-  const currentFrame = result?.frames[frameIndex];
+  const currentFrame = !dirty ? result?.frames[frameIndex] : null;
+  const visualScenario = useMemo(() => {
+    if (!currentFrame?.positions) return scenario;
+    const copy = clone(scenario);
+    copy.balloons.forEach(h => { const p = currentFrame.positions[h.id]; if (p) Object.assign(h, p); });
+    return copy;
+  }, [scenario, currentFrame]);
   const nodes = useMemo(() => [...scenario.ground_stations, ...scenario.balloons, ...scenario.weather_regions], [scenario]);
-  const topologyLinks = useMemo(() => potentialLinks(scenario, currentFrame, !dirty), [scenario, currentFrame, dirty]);
+  const topologyLinks = useMemo(() => potentialLinks(visualScenario, currentFrame, !dirty), [visualScenario, currentFrame, dirty]);
   const selectedLink = topologyLinks.find(l => l.id === selectedId);
   const selected = nodes.find(n => n.id === selectedId) || scenario.demands.find(n => n.id === selectedId) || selectedLink;
   const selectedType = selectedLink ? 'link' : selectedId?.startsWith('gs-') ? 'gs'
@@ -78,7 +85,8 @@ export default function App() {
 
   function patchScenario(mutator) {
     setScenario(old => { const next = clone(old); mutator(next); return next; });
-    setDirty(true); setPlaying(false);
+    requestId.current += 1; // Discard responses computed for older scenarios.
+    setRunning(false); setDirty(true); setPlaying(false);
   }
   function modifyItem(id, field, value) {
     patchScenario(s=>{for(const group of ['ground_stations','balloons','weather_regions','demands']) {
@@ -129,7 +137,23 @@ export default function App() {
       if (!enabled) s.link_overrides.push({source:link.source,target:link.target,enabled:false});
     });
   }
-  async function runSim(caseInput=scenario, {silent=false}={}) {
+  async function uploadTrajectory(hapId, file) {
+    if (!file) return;
+    setUploadingTrajectory(true); setError('');
+    const form = new FormData(); form.append('file', file);
+    try {
+      const response = await fetch('/api/trajectories/upload', {method:'POST', body:form});
+      const payload = await response.json();
+      if (!response.ok) throw new Error(typeof payload.detail === 'string' ? payload.detail : 'Invalid trajectory');
+      patchScenario(s=>{
+        const hap=s.balloons.find(h=>h.id===hapId);
+        if (hap) Object.assign(hap, {trajectory_id:payload.trajectory_id,trajectory_name:payload.filename, ...payload.first});
+        s.config.slots = Math.min(1500, Math.floor(payload.duration_seconds/s.config.slot_seconds)+1);
+      });
+    } catch(e) { setError(`Trajectory import: ${e.message}`); }
+    finally {setUploadingTrajectory(false);}
+  }
+  async function runSim(caseInput=scenario, {silent=false, autoPlay=false}={}) {
     const id=++requestId.current;
     setRunning(true); setError(''); setPlaying(false);
     try {
@@ -141,6 +165,7 @@ export default function App() {
       const data=await res.json();
       if(id!==requestId.current) return;
       setResult(data); setFrameIndex(0); setDirty(false); setBackend('online');
+      if (autoPlay && data.frames?.length) setPlaying(true);
     } catch (e) {
       if(id!==requestId.current) return;
       setBackend('offline'); setError(`Cannot reach simulator: ${e.message}. Start FastAPI on port 8000.`);
@@ -152,6 +177,12 @@ export default function App() {
     const interval=setInterval(()=>setFrameIndex(i=>i >= result.frames.length-1 ? 0 : i+1), 650);
     return ()=>clearInterval(interval);
   }, [playing, result]);
+  function togglePlayback() {
+    if (running) return;
+    if (playing) {setPlaying(false);return;}
+    if (dirty || !result) {runSim(scenario, {autoPlay:true});return;}
+    setPlaying(true);
+  }
   function reset() {
     const resetCase=clone(INITIAL_SCENARIO);
     setScenario(resetCase); setSelectedId('hap-1'); setFrameIndex(0); setSceneKey(k=>k+1);
@@ -232,9 +263,9 @@ export default function App() {
         </div>
         <div className="scene-wrapper">
           <div className="scene-view">
-            {mode==='3d' ? <Network3D key={sceneKey} scenario={scenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId}
+            {mode==='3d' ? <Network3D key={sceneKey} scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId}
               onSelect={setSelectedId} dragMode={dragMode} onPositionChange={onPositionChange} autoRotate={autoRotate} />
-              : <GeoMap scenario={scenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId} onSelect={setSelectedId} onPositionChange={onPositionChange} />}
+              : <GeoMap scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId} onSelect={setSelectedId} onPositionChange={onPositionChange} />}
           </div>
           <div className="scene-corner top-left">
             <div className="floating-label"><span className="floating-dot"/> NETWORK LIVE VIEW <span className="light-divider">/</span> {mode==='3d'?'LOCAL XYZ':'WGS84'}</div>
@@ -254,7 +285,7 @@ export default function App() {
             <div className="visual-legend"><span><i className="legend-mark link"/> Optical link</span><span><i className="legend-mark demand"/> Demand route</span><span><i className="legend-mark cloud"/> Weather region</span></div>
             <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag model to move':'Enable Move to drag models'}</div>
           </div>}
-          {dirty&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Scene modified · Run to update links</div></div>}
+          {dirty&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
         </div>
         {error && <div className="error-bar"><WifiOff size={15}/><span>{error}</span><button onClick={()=>setError('')}><X size={15}/></button></div>}
         <div className="timeline">
@@ -262,14 +293,18 @@ export default function App() {
             <div><strong>Simulation timeline</strong><small>{totalFrames} slots · {scenario.config.slot_seconds}s per slot</small></div></div>
             <div className="timeline-actions"><span className="time-current">T+{toClock((currentFrame?.time_seconds ?? 0))}</span>
               <button onClick={()=>{setFrameIndex(0);setPlaying(false);}} title="Restart playback"><RefreshCcw size={15}/></button>
-              <button className="playback-button" onClick={()=>setPlaying(v=>!v)} disabled={!result}>{playing?<Pause size={16} fill="currentColor"/>:<Play size={16} fill="currentColor"/>}</button>
+              <button className="playback-button" onClick={togglePlayback} disabled={running} title={dirty || !result ? "Recalculate and play updated scenario" : playing ? "Pause" : "Play"}>{running?<RefreshCcw size={16} className="spin"/>:playing?<Pause size={16} fill="currentColor"/>:<Play size={16} fill="currentColor"/>}</button>
             </div></div>
+          <div className="trajectory-slot-control"><label htmlFor="slot-seconds">Time slot</label>
+            <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);})}>
+              {[10,30,60,120,300,600,900,1800,3600].map(v=><option key={v} value={v}>{v<60?`${v} sec`:v<3600?`${v/60} min`:`${v/3600} hour`}</option>)}
+            </select><small>Trajectory horizon adjusts on Play</small></div>
           <div className="timeline-scrub"><span>00:00</span><input aria-label="Simulation time slot" type="range" min={0} max={Math.max(0,totalFrames-1)}
             value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);}}
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
             <span>{toClock((totalFrames-1)*scenario.config.slot_seconds)}</span></div>
           <div className="timeline-footer"><span><span className="timeline-dot aqua"/> Link state</span><span><span className="timeline-dot purple"/> QKP buffers</span>
-            <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{dirty?' · previous simulation':''}</span></div>
+            <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{dirty?' · press Play to update':''}</span></div>
         </div>
       </div>
     </main>
@@ -326,6 +361,14 @@ export default function App() {
                   onChange={e=>modifyItem(selected.id,'yaw_deg',Number(e.target.value))} /></label>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
                 <Numeric label="Extra path loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
+              {selectedType==='hap' && <div className="trajectory-upload">
+                <strong>HAP trajectory</strong>
+                <label className="trajectory-upload-button">{uploadingTrajectory?'Importing…':'Upload CSV / Excel'}
+                  <input type="file" accept=".csv,.xlsx" disabled={uploadingTrajectory} onChange={e=>{uploadTrajectory(selected.id,e.target.files?.[0]);e.target.value='';}} />
+                </label>
+                <small>{selected.trajectory_name || 'Static position · no trajectory attached'}</small>
+                {selected.trajectory_id && <button className="trajectory-clear" onClick={()=>patchScenario(s=>{const h=s.balloons.find(h=>h.id===selected.id);delete h.trajectory_id;delete h.trajectory_name;})}>Remove trajectory</button>}
+              </div>}
               {selectedType==='hap' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.target===selected.id).length}</b></div>}
               {selectedType==='gs' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.source===selected.id).length}</b></div>}
             </div>}

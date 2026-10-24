@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid, Html, Line, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { CENTER, fromWorld, position3D } from '../lib/geo';
@@ -39,13 +39,13 @@ function KeyTank({ fraction = 0, isBalloon = false }) {
 }
 
 
-function Badge({ title, subtitle, kind, active, qkp }) {
-  return <div className={`world-label ${kind} ${active ? 'is-selected' : ''}`}>
+function Badge({ title, kind, active, qkp }) {
+  const pct = qkp ? Math.round(100 * qkp.fill_fraction) : null;
+  return <div className={`world-label compact-node-label ${kind} ${active ? 'is-selected' : ''}`}
+    title={`${kind === 'balloon' ? 'HAP' : 'GS'} ${title} · QKP ${qkp ? `${formatBits(qkp.stored_bits)} / ${formatBits(qkp.capacity_bits)}` : 'not calculated'}`}>
     <span className="world-label-dot" />
-    <span><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}
-      <small className="qkp-label-row">QKP · {qkp ? `${formatBits(qkp.stored_bits)} / ${formatBits(qkp.capacity_bits)}` : 'Not simulated'}</small>
-      {qkp && <span className="qkp-progress"><span style={{width: `${Math.min(100, Math.max(0, qkp.fill_fraction * 100))}%`}} /></span>}
-    </span>
+    <strong>{kind === 'balloon' ? 'HAP' : 'GS'} · {title}</strong>
+    <span className="node-qkp-short">QKP {pct == null ? '—' : `${pct}%`}</span>
   </div>;
 }
 
@@ -254,10 +254,10 @@ function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange,
     <Line points={isBalloon ? [[2.0, 7.45, 0], [4.4, 8.65, 0]] : [[1.4, 3.6, 0], [3.8, 4.85, 0]]}
       color={isBalloon ? GOLD : CYAN} transparent opacity={0.58} lineWidth={1} />
     <Html position={isBalloon ? [4.4, 8.65, 0] : [3.8, 4.85, 0]}
-      center={false} distanceFactor={68} transform={false}
+      center={false} distanceFactor={43} transform={false}
       style={{ pointerEvents: 'none', userSelect: 'none' }}>
       <div style={{ transform: 'translate(7px, -50%)' }}>
-        <Badge title={item.name} subtitle={isBalloon ? `${item.altitude_km} km altitude` : 'Ground station'}
+        <Badge title={item.name}
           kind={type} active={selected} qkp={qkp} />
       </div>
     </Html>
@@ -286,12 +286,32 @@ function Cloud({ weather, selected, onSelect }) {
 
 function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode, onPositionChange, autoRotate }) {
   const [dragging, setDragging] = useState(false);
+  const orbitRef = useRef();
+  const { camera } = useThree();
+  const trajectoryHap = scenario.balloons.find(b => b.trajectory_id);
+  const followPoint = trajectoryHap ? position3D(trajectoryHap) : null;
+  // Keep distant uploaded trajectories visible without snapping on every slot.
+  useFrame(() => {
+    const control = orbitRef.current;
+    if (!followPoint || !control || dragging) return;
+    const target = control.target;
+    const dx = followPoint[0] - target.x;
+    const dz = followPoint[2] - target.z;
+    const distance = Math.hypot(dx, dz);
+    if (distance > 75) {
+      const step = Math.min(1, (distance - 55) / Math.max(distance, 1));
+      const move = new THREE.Vector3(dx * step, 0, dz * step);
+      camera.position.add(move);
+      control.target.add(move);
+      control.update();
+    }
+  });
   const links = topologyLinks || frame?.links || [];
   const qkps = Object.fromEntries((frame?.qkps || []).map(q => [q.node_id, q]));
   const coords = Object.fromEntries([...scenario.ground_stations, ...scenario.balloons].map(n => [n.id, position3D(n)]));
   return <>
     <color attach="background" args={['#0a1826']} />
-    <fog attach="fog" args={['#0a1826', 108, 205]} />
+    <fog attach="fog" args={['#0a1826', 180, 650]} />
     <ambientLight intensity={1.6} />
     <hemisphereLight args={['#c2eaff', '#263747', 2.3]} />
     <directionalLight position={[35, 70, 10]} intensity={2.7} color="#f9e7d4" castShadow shadow-mapSize={[2048, 2048]} />
@@ -335,12 +355,13 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
         <Line points={endpoints}
           color={isSelected ? '#f8cf91' : unavailable ? '#e18485' : link.active ? '#4de5d6' : '#4d8b9a'} lineWidth={isSelected ? 4 : link.active ? 2.5 : 1.5}
           transparent opacity={isSelected ? 1 : unavailable ? 0.55 : link.active ? 0.88 : 0.45} />
-        <Html position={midpoint} center distanceFactor={95} style={{pointerEvents:'none'}}>
-          <div className="link-throughput-label">
-            <strong>{!link.enabled ? 'Disabled' : !link.in_range ? 'Out of range' : link.capacity_bps == null ? 'Run to calculate' : formatRate(cap)}</strong><span>{link.used_bps == null ? 'Potential optical link' : `Used ${formatRate(used)}`}</span>
-            <div className="link-throughput-track"><span style={{width:`${cap ? Math.min(100, 100*used/cap) : 0}%`}} /></div>
+        {/* Tiny single-line rate tag. Full information stays in the link inspector. */}
+        {(link.capacity_bps != null || isSelected) && <Html position={midpoint} center distanceFactor={36} style={{pointerEvents:'none'}}>
+          <div className={`link-throughput-label compact-link-label ${isSelected ? 'selected' : ''}`}
+            title={`Capacity: ${formatRate(cap)} · Used: ${formatRate(used)}`}>
+            {!link.enabled ? 'OFF' : !link.in_range ? 'OOR' : link.capacity_bps == null ? '…' : `${formatRate(cap)} / ${formatRate(used)}`}
           </div>
-        </Html>
+        </Html>}
         {link.active && <Line points={endpoints}
           color="#7cfdf3" lineWidth={5.5} transparent opacity={0.095} />}
       </group>;
@@ -355,15 +376,15 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
       dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[gs.id]} />)}
     {scenario.balloons.map(hap => <ModelNode key={hap.id} item={hap} type="balloon" selected={selectedId===hap.id}
       dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[hap.id]} />)}
-    <OrbitControls makeDefault enabled={!dragging} target={[0, 6, 0]} minDistance={20}
-      maxDistance={185} minPolarAngle={0.10} maxPolarAngle={Math.PI * 0.48}
+    <OrbitControls ref={orbitRef} makeDefault enabled={!dragging} target={[0, 6, 0]} minDistance={20}
+      maxDistance={600} minPolarAngle={0.10} maxPolarAngle={Math.PI * 0.48}
       enableDamping dampingFactor={0.075} autoRotate={autoRotate && !dragging} autoRotateSpeed={0.32} />
   </>;
 }
 
 export default function Network3D(props) {
   return <div className="three-host">
-    <Canvas camera={{ position: [67, 51, 79], fov: 43, near: 0.15, far: 420 }}
+    <Canvas camera={{ position: [67, 51, 79], fov: 43, near: 0.15, far: 1400 }}
       shadows dpr={[1, 1.75]} gl={{ antialias: true, alpha: false }}>
       <Scene {...props} />
     </Canvas>

@@ -7,6 +7,7 @@ It supplies a stable frame-by-frame API for the frontend and later replacement.
 import math
 from .models import Scenario, LinkState, DemandState, SimulationFrame, SimulationResult, QKPState
 from .setup import build_links
+from .trajectories import scenario_at, horizon_seconds
 
 
 def rate_for_link(link: dict, scenario: Scenario, slot: int) -> float:
@@ -24,6 +25,8 @@ def rate_for_link(link: dict, scenario: Scenario, slot: int) -> float:
 def allocate(scenario: Scenario) -> SimulationResult:
     candidates = build_links(scenario)
     duration = scenario.config.slot_seconds
+    horizon = horizon_seconds(scenario)
+    slots = min(1500, int(horizon // duration) + 1) if horizon is not None else scenario.config.slots
     capacity_by_gs = {g.id: g.capacity_bits for g in scenario.ground_stations}
     # A GS's HAP-specific store is capped at the station's total budget / number of optical neighbors.
     hap_capacity = {h.id: h.capacity_bits for h in scenario.balloons}
@@ -42,7 +45,9 @@ def allocate(scenario: Scenario) -> SimulationResult:
     buffers = {link["id"]: 0.0 for link in candidates}
     frames: list[SimulationFrame] = []
 
-    for slot in range(scenario.config.slots):
+    for slot in range(slots):
+        slot_scenario, positions = scenario_at(scenario, slot * duration)
+        candidates = build_links(slot_scenario)
         rates = {link["id"]: rate_for_link(link, scenario, slot) for link in candidates}
         for link in candidates:
             lid = link["id"]
@@ -92,7 +97,7 @@ def allocate(scenario: Scenario) -> SimulationResult:
                 capacity_bits=round(cap, 1),
                 fill_fraction=round(min(1.0, stored / cap), 5)))
         frames.append(SimulationFrame(
-            slot=slot, time_seconds=slot * duration,
+            slot=slot, time_seconds=slot * duration, positions=positions,
             links=link_states, demands=demand_states, qkps=qkp_states,
             stored_bits_total=round(sum(buffers.values()), 1),
             served_bps_total=round(sum(d.served_bps for d in demand_states), 2)))

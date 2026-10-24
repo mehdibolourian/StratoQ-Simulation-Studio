@@ -20,6 +20,8 @@ class Balloon(BaseModel):
     coverage_km: float = Field(default=85, gt=0, le=500)
     capacity_bits: float = Field(default=12_000_000, gt=0)
     yaw_deg: float = Field(default=0, ge=-360, le=360)
+    trajectory_id: str | None = None
+    trajectory_name: str | None = None
 
 
 class Demand(BaseModel):
@@ -39,7 +41,7 @@ class WeatherRegion(BaseModel):
 
 
 class SimulationConfig(BaseModel):
-    slots: int = Field(default=24, ge=1, le=288)
+    slots: int = Field(default=24, ge=1, le=1500)
     slot_seconds: int = Field(default=300, ge=1, le=86400)
     base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)
 
@@ -117,6 +119,7 @@ class SimulationFrame(BaseModel):
     slot: int
     time_seconds: int
     links: list[LinkState]
+    positions: dict[str, dict[str, float]] = Field(default_factory=dict)
     demands: list[DemandState]
     qkps: list[QKPState] = Field(default_factory=list)
     stored_bits_total: float

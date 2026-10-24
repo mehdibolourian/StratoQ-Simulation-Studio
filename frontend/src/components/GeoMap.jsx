@@ -66,6 +66,16 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
 
   useEffect(() => {
     const map = mapRef.current;
+    const tracked = scenario.balloons.find(b => b.trajectory_id);
+    if (!map || !tracked || !map.loaded()) return;
+    const bounds = map.getBounds();
+    if (!bounds.contains([tracked.lon, tracked.lat])) {
+      map.easeTo({center:[tracked.lon, tracked.lat], duration:400});
+    }
+  }, [scenario]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
     markers.current.forEach(m => m.remove());
     markers.current = [];
