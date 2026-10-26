@@ -60,10 +60,32 @@ class WeatherRegion(BaseModel):
     effect: Literal["fog", "rain", "snow"] = "fog"
 
 
+class OpticalParameters(BaseModel):
+    # Defaults from balloon_qnet/transmittance_simulation.py (the analytical branch).
+    wavelength_nm: float = Field(default=1550, gt=0, le=10000)
+    beam_waist_m: float = Field(default=0.15, gt=0, le=10)
+    rx_aperture_down_m: float = Field(default=0.75, gt=0, le=20)
+    rx_aperture_up_m: float = Field(default=0.40, gt=0, le=20)
+    obscuration_ratio: float = Field(default=0.3, ge=0, lt=1)
+    cn0: float = Field(default=1e-13, gt=0, le=1e-8)
+    pointing_error_rad: float = Field(default=1e-7, ge=0, le=0.1)
+    tracking_efficiency: float = Field(default=0.85, ge=0, le=1)
+    detector_efficiency: float = Field(default=0.85, ge=0, le=1)
+    ao_correction_order: int = Field(default=6, ge=0, le=100)
+    wind_speed_mps: float = Field(default=10., gt=0, le=100)
+    source_rate_hz: float = Field(default=80e6, gt=0, le=1e12)
+    source_efficiency: float = Field(default=0.01, ge=0, le=1)
+    qber: float = Field(default=0.04, ge=0, lt=0.5)
+
+
 class SimulationConfig(BaseModel):
     slots: int = Field(default=24, ge=1, le=1500)
     slot_seconds: int = Field(default=300, ge=1, le=86400)
-    base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)
+    base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)  # legacy input, ignored by physical engine
+    optical: OpticalParameters = Field(default_factory=OpticalParameters)
+    allocation_mode: Literal["random", "greedy"] = "random"
+    allocator_seed: int = Field(default=42, ge=0, le=2**31-1)
+    channel_workers: int = Field(default=10, ge=1, le=24)
 
 
 class OpticalLinkOverride(BaseModel):
@@ -153,6 +175,6 @@ class SimulationFrame(BaseModel):
 
 
 class SimulationResult(BaseModel):
-    engine: str = "synthetic-demo"
+    engine: str = "balloon-qnet-theoretical"
     frames: list[SimulationFrame]
     summary: dict[str, float | int]

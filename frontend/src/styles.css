@@ -86,3 +86,12 @@
 .weather-quick-controls .weather-type-options button{min-height:60px;font-size:10px}
 .revision-warning{background:#4b3523;color:#ffe4ba;border:1px solid #a47946;border-radius:8px;padding:10px 13px;font-size:11px;line-height:1.6}
 .revision-warning strong{color:#fff1d6}
+
+/* Original upstream balloon_qnet physical-model progress */
+.physics-progress{margin-top:12px;border:1px solid #46616b;border-radius:9px;padding:10px 11px;background:#1b3039;color:#d6efe8}
+.physics-progress-meta{display:flex;justify-content:space-between;gap:8px;font-size:10px}
+.physics-progress-meta span{color:#a4c6cc;font-variant-numeric:tabular-nums}
+.physics-progress-track{height:6px;border-radius:5px;margin:9px 0 7px;background:#344751;overflow:hidden}
+.physics-progress-track>div{height:100%;background:#9ce9d9;transition:width .25s ease}
+.physics-progress small{font-size:9px;color:#a2b7c1}
+.physics-last-run{display:flex;gap:6px;align-items:center;margin-top:11px;color:#a8e8cc;font-size:10px}

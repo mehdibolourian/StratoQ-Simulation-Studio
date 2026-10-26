@@ -2,7 +2,13 @@
 
 A runnable starter for a balloon-assisted QKD visualizer using **React + Vite + React Three Fiber/Three.js + MapLibre GL JS + FastAPI**. It starts with two ground stations and one 15-km high-altitude platform around Timmins / Iroquois Falls, Ontario.
 
-**Please read the model disclaimer:** the included optical rates, routing and buffer updates are *synthetic placeholders*, not your published StratoQ physical layer, secret-key rate equations, optimizer, or security model. They are meant to exercise the exact data boundary that future StratoQ integration can replace.
+**v0.8 physically calculated links:** The optical rates call the original
+`balloon_qnet.transmittance_simulation.channel_theory` numerical model
+(LOWTRAN7, turbulence, AO, fiber coupling) and its BB84 SKR equation.
+**Only routing and storage allocation remain demo heuristics**, and user weather
+patches are applied as configured dB attenuation over 2D path intersections.
+See **[REAL-PHYSICS-V08.md](REAL-PHYSICS-V08.md)** for platform prerequisites,
+exact execution and cache behavior, full/native verification, and limits.
 
 ## Prerequisites
 
@@ -49,7 +55,7 @@ npm run dev
 
 Open **http://127.0.0.1:5173** in your browser. The Vite dev server proxies `/api` to FastAPI at `127.0.0.1:8000`.
 
-You should see 2 ground stations, one balloon, a cyan optical network, a right-side inspector, and a timeline. The UI automatically sends the sample scenario to Python when opened.
+You should see 2 ground stations, one balloon, a cyan optical network, a right-side inspector, and a timeline. Press **Run simulation** to start the real physical calculations (they do not auto-run on page load).
 
 ## 4. Try the demo
 
@@ -58,7 +64,7 @@ You should see 2 ground stations, one balloon, a cyan optical network, a right-s
 3. **Move elements geographically**: Switch to `Map view`; drag GS, balloon or weather markers. Switch back to 3D to see their new positions.
 4. **Rotate a 3D model**: Select it and use the `Model heading` slider on the right (the camera can be rotated independently).
 5. **Add objects**: Use the left sidebar to add a balloon, GS, cloud region or demand. Edit their parameters on the right.
-6. **Test weather**: Add a weather region, set radius and path loss in dB, place it across one link, and click **Run simulation**. The toy link rates should decrease.
+6. **Test weather**: Add a weather region, set radius and path loss in dB, place it across one link, and click **Run simulation**. The link efficiency and BB84 capacity should decrease.
 7. **Playback**: Press play under the 3D scene, or scrub time slots to see key-buffer and demand delivery changes.
 8. **Export**: Use `Export scenario` or the inspector's results export icon to save JSON.
 
@@ -104,26 +110,30 @@ curl -s -X POST http://127.0.0.1:8000/api/simulate \
   -H 'Content-Type: application/json' -d @case.json > result.json
 ```
 
-## Replacing with real StratoQ
+## Actual upstream theoretical channel — v0.8
 
-Keep the API and frontend **unchanged**. Replace `backend/stratoq_demo/stratoq_adapter.py`:
+Run `python verify_physics.py` in `backend/` before the first large simulation.
+This calls the actual LOWTRAN7 Fortran native library and the original
+`channel_theory` for both directions. If a dependency is missing it fails
+explicitly: **there is no simplified physical model fallback**.
 
-```python
-from .models import Scenario, SimulationResult
+Use `GET /api/physics/status` to check availability of the native module.
+The UI starts a monitored job with `POST /api/simulations`, polls
+`GET /api/simulations/{id}`, and fetches results only once complete. The
+progress bar shows unique link/time physical calculations and cache hits.
 
-def simulate(scenario: Scenario) -> SimulationResult:
-    # 1) Build StratoQ's setup() input from scenario.ground_stations,
-    #    scenario.balloons, scenario.demands, scenario.weather_regions.
-    # 2) Run channel-rate/capacity calculations (reuse your channel cache).
-    # 3) Call your routing/placement or resource allocator.
-    # 4) Convert solver outputs + QKP evolution into SimulationFrame records.
-    # 5) Return SimulationResult(frames=..., summary=...)
-    raise NotImplementedError
-```
+Every changed GS/HAP geometry, altitude, wavelength, turbulence, AO or
+pointing parameter triggers new channel evaluations upon Run; unaffected
+fingerprinted geometry is reused from a SQLite cache. Changes to source
+rate/QBER or user weather dB can be applied to the cached channel efficiency.
+
+The resource allocator remains a seeded demonstration heuristic, not your
+full StratoQ routing/optimization algorithm. See **REAL-PHYSICS-V08.md**.
 
 **Technical modeling TODO:** Weather currently attenuates a link if the horizontal GS–HAP segment intersects a disk. That is not a vertical 3D atmospheric-volume intersection model. Replace it with altitude-aware path integration if you want physically credible atmospheric effects. The local XYZ projection in the 3D viewer uses an equirectangular tangent-plane approximation for regional-scale scenes; use ENU/ECEF coordinates for larger areas or accurate Earth curvature. Balloon envelope, antenna and station meshes are visually exaggerated and not true-to-scale equipment.
 
-Once the expensive optimizer is connected, you probably want a `POST /api/jobs` endpoint + background worker + WebSocket progress rather than blocking `POST /api/simulate` for several minutes. The current synchronous route is correct for a lightweight MVP only.
+The real physical calculation now uses monitored background jobs with polling.
+The legacy synchronous `/api/simulate` route remains for compatibility and debugging.
 
 ## Testing / troubleshooting
 
@@ -141,3 +151,14 @@ Common issues:
 - **Invalid scenario 422**: Demand endpoints must name different, existing GS IDs; `altitude_km` must be between 0 and 50 (strictly > 0).
 
 For production or shared/public access: add authentication, persistent storage, job isolation, solver runtime limits, and hardened allowed origins. The current API is meant for a local, trusted machine only.
+
+## v0.7 physical-rate update
+
+The network uses a fast **analytical approximation** to compute BB84 link capacities instead of the previous arbitrary/synthetic rate formula. See **[ANALYTICAL-V07.md](ANALYTICAL-V07.md)** for scope, parameter mapping, limitations, tests and exact StratoQ integration seam. UI/API version is `0.7.0`; all source files must be updated together.
+
+## v0.8 physics integration (current)
+
+See [REAL-PHYSICS-V08.md](REAL-PHYSICS-V08.md). UI/API version `0.8.0`; the real
+`balloon_qnet` analytical channel is always used, and the browser displays the
+actual physical computation progress. The v0.7 approximation is historical and
+is no longer on the simulation execution path.

@@ -5,3 +5,13 @@ pytest>=8,<10
 httpx>=0.27,<1
 
 python-multipart>=0.0.9
+
+# Actual upstream theoretical channel uses SciPy / LOWTRAN7 and does NOT need NetSquid.
+# LOWTRAN native extension requires CMake + gfortran + f2py; see REAL-PHYSICS-V08.md.
+numpy>=1.24,<2; python_version < '3.12'
+numpy>=2.0,<3; python_version >= '3.12'
+scipy>=1.10,<2
+pandas>=1.5,<3
+matplotlib>=3.6,<4
+xarray>=2023.1
+# Python >=3.12 uses Meson with NumPy f2py: pip install meson meson-python ninja

@@ -1,32 +1,22 @@
-"""Small, deterministic illustrative *key buffer* simulation.
+"""Slot-by-slot placeholder resource allocator consuming upstream BB84 capacities.
 
-This deliberately does NOT implement StratoQ's real optimization, trusted-relay
-security assumptions, optical turbulence model, or QKD secret key analysis.
-It supplies a stable frame-by-frame API for the frontend and later replacement.
+Only allocation is illustrative; the optical rate is computed by physical_setup.
+Link key inventories are shared copies at both endpoints, not additive.
 """
 import math
+import random
 from .models import Scenario, LinkState, DemandState, SimulationFrame, SimulationResult, QKPState
-from .setup import build_links
+from .setup import build_links, balloon_weather
+from .physical_setup import create_physical_network
 from .trajectories import scenario_at, horizon_seconds
 
 
-def rate_for_link(link: dict, scenario: Scenario, slot: int) -> float:
-    # Deliberately simplified path attenuation and variation.
-    distance_factor = math.exp(-link["distance_km"] / 75)
-    geometry_factor = max(0.20, math.sin(math.radians(link["elevation_deg"])))**0.50
-    atmosphere_factor = 10**(-link["weather_loss_db"] / 10)
-    variation = 0.90 + 0.10 * math.sin(0.38 * slot + sum(ord(c) for c in link["id"]) * 0.1)
-    if not link["enabled"] or not link["in_range"]:
-        return 0.0
-    return max(0, scenario.config.base_rate_bps * distance_factor
-               * geometry_factor * atmosphere_factor * variation)
-
-
-def allocate(scenario: Scenario) -> SimulationResult:
+def allocate(scenario: Scenario, progress=None) -> SimulationResult:
+    rng = random.Random(scenario.config.allocator_seed)
+    physical = create_physical_network(scenario, progress=progress)
     candidates = build_links(scenario)
-    duration = scenario.config.slot_seconds
-    horizon = horizon_seconds(scenario)
-    slots = min(1500, int(horizon // duration) + 1) if horizon is not None else scenario.config.slots
+    duration = physical.system.THETA
+    slots = physical.slots
     capacity_by_gs = {g.id: g.capacity_bits for g in scenario.ground_stations}
     # A GS's HAP-specific store is capped at the station's total budget / number of optical neighbors.
     hap_capacity = {h.id: h.capacity_bits for h in scenario.balloons}
@@ -48,7 +38,17 @@ def allocate(scenario: Scenario) -> SimulationResult:
     for slot in range(slots):
         slot_scenario, positions = scenario_at(scenario, slot * duration)
         candidates = build_links(slot_scenario)
-        rates = {link["id"]: rate_for_link(link, scenario, slot) for link in candidates}
+        # The authoritative rate series is computed before allocation, once per
+        # directed optical link and trajectory time slot.
+        rates = {link["id"]: physical.rate_by_link[link["id"]][slot]
+                 for link in candidates}
+        # The displayed geometry should match the very same physical samples.
+        for link in candidates:
+            physical_sample = physical.scene_links[(link['source'],link['target'])][slot]
+            link['distance_km'] = physical_sample['distance_km']
+            link['elevation_deg'] = physical_sample['elevation_deg']
+            link['in_range'] = physical_sample['in_range']
+        weather_by_hap = {h.id: balloon_weather(h, slot_scenario) for h in slot_scenario.balloons}
         for link in candidates:
             lid = link["id"]
             buffers[lid] = min(max_storage[lid], buffers[lid] + rates[lid] * duration)
@@ -64,7 +64,13 @@ def allocate(scenario: Scenario) -> SimulationResult:
                 if l1 in buffers and l2 in buffers and rates[l1] > 0 and rates[l2] > 0:
                     options.append((min(buffers[l1], buffers[l2]) / duration, l1, l2, balloon.id))
             if options:
-                possible_bps, l1, l2, balloon_id = max(options)
+                # Explicitly a placeholder policy, not StratoQ's optimizer.
+                # Random mode is seed-reproducible and selects among feasible
+                # GS-HAP-GS paths. Greedy mode favors the largest inventory.
+                if scenario.config.allocation_mode == 'random':
+                    possible_bps, l1, l2, balloon_id = rng.choice(options)
+                else:
+                    possible_bps, l1, l2, balloon_id = max(options)
                 served_bps = min(demand.rate_bps, possible_bps)
                 used = served_bps * duration
                 link_use[l1] += served_bps
@@ -98,15 +104,19 @@ def allocate(scenario: Scenario) -> SimulationResult:
                 fill_fraction=round(min(1.0, stored / cap), 5)))
         frames.append(SimulationFrame(
             slot=slot, time_seconds=slot * duration, positions=positions,
+            weather_by_hap=weather_by_hap,
             links=link_states, demands=demand_states, qkps=qkp_states,
             stored_bits_total=round(sum(buffers.values()), 1),
             served_bps_total=round(sum(d.served_bps for d in demand_states), 2)))
 
     average_served = sum(f.served_bps_total for f in frames) / len(frames)
     average_requested = sum(d.rate_bps for d in scenario.demands)
-    return SimulationResult(frames=frames, summary={
+    if progress: progress({"stage":"allocation", "total":slots, "completed":slots, "cached":physical.rate_stats["cached"], "computed":physical.rate_stats["computed"]})
+    return SimulationResult(engine="balloon-qnet-theoretical", frames=frames, summary={
         "slots": len(frames), "links": len(candidates),
         "average_served_bps": round(average_served, 2),
         "average_satisfaction": round(average_served / average_requested, 4) if average_requested else 1.0,
         "final_stored_bits": frames[-1].stored_bits_total,
+        "physical_evaluations": physical.rate_stats["computed"],
+        "cached_evaluations": physical.rate_stats["cached"],
     })

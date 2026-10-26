@@ -84,7 +84,7 @@ def default_scenario() -> Scenario:
             {"id": "hap-1", "name": "Strato-01", "lat": 48.6212,
              "lon": -81.00655, "altitude_km": 15, "coverage_km": 85, "yaw_deg": 18},
         ],
-        "demands": [{"id": "d-1", "source": "gs-1", "target": "gs-2", "rate_bps": 9000}],
+        "demands": [{"id": "d-1", "source": "gs-1", "target": "gs-2", "rate_bps": 4000}],
         "weather_regions": [],
         "config": {"slots": 24, "slot_seconds": 300, "base_rate_bps": 36_000},
     })

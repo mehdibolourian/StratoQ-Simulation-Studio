@@ -11,7 +11,7 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
-const STUDIO_VERSION = '0.6.2';
+const STUDIO_VERSION = '0.8.0';
 const clone = (obj) => structuredClone(obj);
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
@@ -64,6 +64,8 @@ export default function App() {
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [uploadingTrajectory, setUploadingTrajectory] = useState(false);
+  const [physicsProgress, setPhysicsProgress] = useState(null);
+  const [physicsStatus, setPhysicsStatus] = useState(null);
   const requestId = useRef(0);
 
   const currentFrame = !dirty ? result?.frames[frameIndex] : null;
@@ -88,7 +90,7 @@ export default function App() {
   function patchScenario(mutator) {
     setScenario(old => { const next = clone(old); mutator(next); return next; });
     requestId.current += 1; // Discard responses computed for older scenarios.
-    setRunning(false); setDirty(true); setPlaying(false);
+    setRunning(false); setDirty(true); setPlaying(false); setPhysicsProgress(null);
   }
   function modifyItem(id, field, value) {
     patchScenario(s=>{for(const group of ['ground_stations','balloons','weather_regions','demands']) {
@@ -165,29 +167,46 @@ export default function App() {
   }
   async function runSim(caseInput=scenario, {silent=false, autoPlay=false}={}) {
     const id=++requestId.current;
-    setRunning(true); setError(''); setPlaying(false);
+    setRunning(true);setError('');setPlaying(false);
+    setPhysicsProgress({stage:'queued',completed:0,total:0,cached:0,computed:0});
     try {
-      const res = await fetch('/api/simulate', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(caseInput)});
-      if (!res.ok) {
-        const body=await res.json().catch(()=>null);
-        throw new Error(body?.detail ? JSON.stringify(body.detail).slice(0,240) : `HTTP ${res.status}`);
+      // The real upstream LOWTRAN + turbulence/AO channel can take minutes on
+      // larger topologies; start a monitored backend job instead of blocking UI.
+      const response=await fetch('/api/simulations', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(caseInput)});
+      const body=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(body?.detail ? JSON.stringify(body.detail).slice(0,300):`HTTP ${response.status}`);
+      const jid=body.id;
+      while (id===requestId.current) {
+        const statusResponse=await fetch(`/api/simulations/${jid}`,{cache:'no-store'});
+        if(!statusResponse.ok)throw new Error(`Cannot read simulation progress: HTTP ${statusResponse.status}. Check backend restart.`);
+        const status=await statusResponse.json();
+        if(id!==requestId.current)return;
+        setPhysicsProgress(status);
+        if(status.status==='failed')throw new Error(status.error||'Physical-layer evaluation failed');
+        if(status.status==='complete')break;
+        await new Promise(resolve=>setTimeout(resolve,550));
       }
-      const data=await res.json();
-      if(id!==requestId.current) return;
-      setResult(data); setFrameIndex(0); setDirty(false); setBackend('online');
-      if (autoPlay && data.frames?.length) setPlaying(true);
-    } catch (e) {
-      if(id!==requestId.current) return;
-      setBackend('offline'); setError(`Simulation failed: ${e.message}. Check the FastAPI terminal for the full traceback (HTTP 500 means the server crashed; it is reachable).`);
-    } finally {if(id===requestId.current) setRunning(false);}
+      if(id!==requestId.current)return;
+      const resultResponse=await fetch(`/api/simulations/${jid}/result`);
+      if(!resultResponse.ok){const errorBody=await resultResponse.json().catch(()=>null);throw new Error(errorBody?.detail||`HTTP ${resultResponse.status}`);}
+      const data=await resultResponse.json();
+      if(id!==requestId.current)return;
+      setResult(data);setFrameIndex(0);setDirty(false);setBackend('online');
+      if(autoPlay && data.frames?.length)setPlaying(true);
+    }catch(e){
+      if(id!==requestId.current)return;
+      setError(`Physical simulation failed: ${e.message}. See FastAPI terminal. No approximate rates were substituted.`);
+    }finally{if(id===requestId.current)setRunning(false);}
   }
   useEffect(() => {
-    fetch('/api/health', {cache:'no-store'})
-      .then(r => { if (!r.ok) throw new Error('unavailable'); return r.json(); })
-      .then(body => setApiVersion(body.version || 'legacy'))
-      .catch(() => setApiVersion('unavailable'));
-    runSim(clone(INITIAL_SCENARIO), {silent:true});
-  }, []);
+    fetch('/api/health',{cache:'no-store'})
+      .then(r=>{if(!r.ok)throw new Error('unavailable');return r.json();})
+      .then(body=>{setApiVersion(body.version||'legacy');setBackend('online');})
+      .catch(()=>{setApiVersion('unavailable');setBackend('offline');});
+    fetch('/api/physics/status',{cache:'no-store'})
+      .then(r=>r.ok?r.json():null).then(setPhysicsStatus).catch(()=>{});
+    // Do not automatically launch the expensive physical calculations on page load.
+  },[]);
   useEffect(() => {
     if(!playing || !result) return;
     const interval=setInterval(()=>setFrameIndex(i=>i >= result.frames.length-1 ? 0 : i+1), 650);
@@ -211,7 +230,7 @@ export default function App() {
     <aside className="left-panel">
       <div className="brand-wrap">
         <div className="brand-symbol"><Layers3 size={23} strokeWidth={2.1}/></div>
-        <div><div className="brand-title">Strato<span>Q</span><sup>SIMULATOR</sup></div><div className="brand-sub">University of Waterloo</div></div>
+        <div><div className="brand-title">strato<span>Q</span><sup>STUDIO</sup></div><div className="brand-sub">QUANTUM NETWORK LAB</div></div>
       </div>
       <div className="side-scroll">
         <div className="section-pad">
@@ -249,10 +268,19 @@ export default function App() {
       <div className="left-bottom">
         <button className="primary-button" onClick={()=>runSim()} disabled={running}>
           {running ? <RefreshCcw size={17} className="spin"/> : <Play size={17} fill="currentColor" />}
-          {running?'Running simulation…':'Run simulation'} <ArrowRight size={16}/>
+          {running?'Computing physical rates…':'Run simulation'} <ArrowRight size={16}/>
         </button>
+        {running && physicsProgress && <div className="physics-progress" role="status" aria-live="polite">
+          <div className="physics-progress-meta"><b>{physicsProgress.stage==='channel'?'Calculating upstream channel':'Preparing physical setup…'}</b>
+          <span>{physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'Initializing'}</span></div>
+          <div className="physics-progress-track"><div style={{width:`${physicsProgress.total?Math.min(100,100*physicsProgress.completed/physicsProgress.total):3}%`}} /></div>
+          <small>{physicsProgress.cached||0} reused · {physicsProgress.computed||0} computed · {physicsProgress.workers||0} workers</small>
+        </div>}
+        {!running && !dirty && physicsProgress?.stage==='complete' && <div className="physics-last-run">
+          <Check size={12}/> Upstream physics · {physicsProgress.computed||0} calculated · {physicsProgress.cached||0} cached
+        </div>}
         <div className="run-hint"><span className={`status-pin ${backend}`} />
-          {backend==='online'?'Python simulator connected':backend==='checking'?'Connecting to local API…':'Backend offline — see README'}
+          {backend==='online'?'Upstream balloon_qnet backend connected':backend==='checking'?'Connecting to local API…':'Backend offline — see README'}
         </div>
       </div>
     </aside>
@@ -261,7 +289,7 @@ export default function App() {
       <header className="topbar">
         <div className="breadcrumb"><span>Projects</span><span className="chevron">/</span><strong>Northern Ontario</strong><span className="chevron">/</span><span>Network editor</span></div>
         <div className="topbar-right">
-          <Chip accent="demo">SYNTHETIC MODEL · UI {STUDIO_VERSION}</Chip>
+          <Chip accent="demo">BALLOON_QNET THEORY · UI {STUDIO_VERSION}</Chip>
           <span className="top-separator"/>
           <button className="header-text-button" onClick={()=>downloadJSON('stratoq-scenario.json',scenario)}><ArrowDownToLine size={16}/> Export scenario</button>
           <button className="avatar" title="Local user">SQ</button>
@@ -301,7 +329,8 @@ export default function App() {
             <div className="visual-legend"><span><i className="legend-mark link"/> Optical link</span><span><i className="legend-mark demand"/> Demand route</span><span><i className="legend-mark cloud"/> Weather region</span></div>
             <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag any object to move':'Drag weather directly · Move tool for GS/HAP'}</div>
           </div>}
-          {dirty&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
+          {running&&physicsProgress&&<div className="scene-corner bottom-right"><div className="pending-indicator">Physical model · {physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'preparing'} · {physicsProgress.cached||0} cached</div></div>}
+          {dirty&&!running&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
         </div>
         {apiVersion !== null && apiVersion !== STUDIO_VERSION && <div className="revision-warning">
           <strong>Version mismatch:</strong> UI {STUDIO_VERSION} / API {apiVersion}. Replace the backend files too and restart FastAPI.
@@ -351,7 +380,7 @@ export default function App() {
             <div className="kpi-card"><div className="kpi-label"><Layers3 size={14}/> Key buffers</div><b>{fmtBits(currentFrame?.stored_bits_total)}</b><small>Total stored bits</small></div>
             <div className="kpi-card"><div className="kpi-label"><Gauge size={14}/> Satisfaction</div><b>{satisfaction===null?'—':`${satisfaction}%`}</b><small>Current slot</small></div>
           </div>
-          <div className="metric-notice"><Sparkles size={15}/><span>Rates and buffers come from the illustrative Python allocator, not a validated QKD model.</span></div>
+          <div className="metric-notice"><Sparkles size={15}/><span>Link rates use a Gaussian-beam BB84 analytical approximation; allocation is a placeholder. Not validated StratoQ results.</span></div>
         </div>
         <div className="inspector-section">
           <GroupTitle>SELECTED OBJECT {selected && <Chip accent={selectedType==='hap'?'warm':'neutral'}>{selectedType.toUpperCase()}</Chip>}</GroupTitle>
@@ -366,14 +395,16 @@ export default function App() {
                 <input type="checkbox" checked={selected.enabled} onChange={e=>setLinkEnabled(selected,e.target.checked)} />
               </label>
               <div className="selection-stat"><span>Status</span><b>{!selected.enabled?'Manually disabled':!selected.in_range?'Out of range':dirty?'Pending simulation':selected.active?'Active':'Unavailable'}</b></div>
-              <Numeric label="Visibility (V)" value={selected.visibility_km??100} unit="km" min={0.01} max={500}
+              <Numeric label="Clear-air visibility (V)" value={selected.visibility_km??100} unit="km" min={0.01} max={500}
                 onChange={v=>changeLinkProperty(selected,'visibility_km',v)}/>
               <Numeric label="Link rate cap (optional)" value={selected.capacity_limit_bps??0} unit="bps" min={0}
                 onChange={v=>changeLinkProperty(selected,'capacity_limit_bps',v===0?null:v)}/>
               <div className="selection-stat"><span>Weather (fog/rain/snow)</span><b>{(selected.weather_flags||[0,0,0]).join(' / ')}</b></div>
               <div className="selection-stat"><span>Capacity</span><b>{!dirty?fmtRate(selected.capacity_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Used by demands</span><b>{!dirty?fmtRate(selected.used_bps):'Run to update'}</b></div>
-              <div className="selection-stat"><span>Distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
+              <div className="selection-stat"><span>Slant distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
+              <div className="selection-stat"><span>GS elevation</span><b>{Number.isFinite(selected.elevation_deg) ? `${selected.elevation_deg.toFixed(1)}°` : 'Run to update'}</b></div>
+              <div className="selection-stat"><span>Weather attenuation</span><b>{Number.isFinite(selected.weather_loss_db) ? `${selected.weather_loss_db.toFixed(1)} dB` : 'Run to update'}</b></div>
               <p className="field-help">Manual failures override physical availability. Click Run StratoQ to reroute demands.</p>
             </div> : selectedType==='demand' ? <div className="field-stack">
               <label className="field-label"><span>Source station</span><select value={selected.source} onChange={e=>modifyItem(selected.id,'source',e.target.value)}>
@@ -421,14 +452,41 @@ export default function App() {
           <GroupTitle>SIMULATION CONFIG</GroupTitle>
           <div className="field-grid"><Numeric label="Time slots" value={scenario.config.slots} min={1} max={288} step={1} onChange={v=>patchScenario(s=>s.config.slots=v)} />
             <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>s.config.slot_seconds=v)} /></div>
-          <div className="single-config"><Numeric label="Nominal optical rate" value={scenario.config.base_rate_bps} unit="bps" min={1} onChange={v=>patchScenario(s=>s.config.base_rate_bps=v)} /></div>
+          <div className="field-grid">
+            <label className="field-label"><span>Placeholder routing</span>
+              <select value={scenario.config.allocation_mode || 'random'} onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
+                <option value="random">Random (seeded)</option><option value="greedy">Greedy (largest QKP)</option>
+              </select>
+            </label>
+            <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=v)}/>
+          </div>
+          <GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle>
+          <div className="field-grid">
+            <Numeric label="Wavelength" value={scenario.config.optical.wavelength_nm} unit="nm" min={300} onChange={v=>patchScenario(s=>s.config.optical.wavelength_nm=v)}/>
+            <Numeric label="Beam waist" value={scenario.config.optical.beam_waist_m} unit="m" min={0.001} onChange={v=>patchScenario(s=>s.config.optical.beam_waist_m=v)}/>
+            <Numeric label="GS receiver diameter" value={scenario.config.optical.rx_aperture_down_m} unit="m" min={0.01} onChange={v=>patchScenario(s=>s.config.optical.rx_aperture_down_m=v)}/>
+            <Numeric label="HAP receiver diameter" value={scenario.config.optical.rx_aperture_up_m} unit="m" min={0.01} onChange={v=>patchScenario(s=>s.config.optical.rx_aperture_up_m=v)}/>
+            <Numeric label="Pulse repetition" value={scenario.config.optical.source_rate_hz} unit="Hz" min={1} onChange={v=>patchScenario(s=>s.config.optical.source_rate_hz=v)}/>
+            <Numeric label="Source efficiency" value={scenario.config.optical.source_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.source_efficiency=v)}/>
+            <Numeric label="QBER" value={scenario.config.optical.qber} min={0} max={0.49} onChange={v=>patchScenario(s=>s.config.optical.qber=v)}/>
+            <Numeric label="Obscuration ratio" value={scenario.config.optical.obscuration_ratio} min={0} max={0.99} onChange={v=>patchScenario(s=>s.config.optical.obscuration_ratio=v)}/>
+            <Numeric label="AO correction order" value={scenario.config.optical.ao_correction_order} step={1} min={0} onChange={v=>patchScenario(s=>s.config.optical.ao_correction_order=v)}/>
+            <Numeric label="Wind speed" value={scenario.config.optical.wind_speed_mps ?? 10} unit="m/s" min={0.01} onChange={v=>patchScenario(s=>s.config.optical.wind_speed_mps=v)}/>
+            <Numeric label="Parallel workers" value={scenario.config.channel_workers ?? 10} step={1} min={1} max={24} onChange={v=>patchScenario(s=>s.config.channel_workers=v)}/>
+            <Numeric label="Turbulence Cn0" value={scenario.config.optical.cn0} min={1e-18} onChange={v=>patchScenario(s=>s.config.optical.cn0=v)}/>
+            <Numeric label="Pointing error" value={scenario.config.optical.pointing_error_rad} unit="rad" min={0} onChange={v=>patchScenario(s=>s.config.optical.pointing_error_rad=v)}/>
+            <Numeric label="Tracking efficiency" value={scenario.config.optical.tracking_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.tracking_efficiency=v)}/>
+            <Numeric label="Detection efficiency" value={scenario.config.optical.detector_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.detector_efficiency=v)}/>
+          </div>
+          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. The allocator is still a demo heuristic. Unchanged physical evaluations are cached.</p>
         </div>
         <div className="inspector-section last"><GroupTitle>API ENGINE</GroupTitle>
           <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong><small>{backend==='online'?'Connection healthy':backend==='checking'?'Checking connection':'Not connected'}</small></div><span className="api-tag">{backend.toUpperCase()}</span></div>
+          {physicsStatus && <p className="field-help">Original channel: {physicsStatus.channel_import_ok?'import OK':'import failed'} · LOWTRAN native: {physicsStatus.native_lowtran_present?'installed':'will build on first run / requires build tools'}</p>}
           <button className="secondary-button" onClick={()=>downloadJSON('stratoq-scenario.json',scenario)}><ArrowDownToLine size={15}/> Download scenario JSON</button>
         </div>
       </div>
-      <div className="right-footer"><CircleHelp size={15}/><span>Prototype v0.1 • ready for StratoQ integration</span></div>
+      <div className="right-footer"><CircleHelp size={15}/><span>v0.8 · balloon_qnet upstream channel · demo allocator</span></div>
     </aside>
   </div>;
 }

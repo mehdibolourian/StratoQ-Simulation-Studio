@@ -20,6 +20,8 @@ export function potentialLinks(scenario, frame = null, includeResults = true) {
       used_bps: enabled && inRange ? (info?.used_bps ?? null) : 0,
       stored_bits: info?.stored_bits ?? null,
       distance_km: info?.distance_km ?? Math.hypot(dx,dy,hap.altitude_km),
+      elevation_deg: info?.elevation_deg ?? null,
+      weather_loss_db: info?.weather_loss_db ?? null,
     };
   }));
 }

@@ -7,7 +7,7 @@ from .models import Scenario, SimulationResult
 from .resource_allocator import allocate
 
 
-def simulate(scenario: Scenario) -> SimulationResult:
-    # Future: translate Scenario to your setup(), call channel-cache / routing
-    # optimizer / simulator, and convert numpy/Gurobi outputs into frames.
-    return allocate(scenario)
+def simulate(scenario: Scenario, progress=None) -> SimulationResult:
+    # Physical GS/HAP/link initialization and analytical K_MAX are performed
+    # by physical_setup; only demand allocation remains a demo heuristic.
+    return allocate(scenario, progress=progress)
