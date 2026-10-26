@@ -29,22 +29,47 @@ def line_intersects_weather(gs, balloon, weather) -> bool:
     return math.hypot(x1 + fraction * dx - xc, y1 + fraction * dy - yc) <= weather.radius_km
 
 
+def balloon_weather(balloon, scenario: Scenario):
+    """Binary regional weather flags for a HAP at one sampled time."""
+    flags = {"fog": 0, "rain": 0, "snow": 0}
+    for w in scenario.weather_regions:
+        if distance_km(balloon.lat, balloon.lon, w.lat, w.lon) <= w.radius_km:
+            effect = getattr(w, "effect", "fog")
+            flags[effect if effect in flags else "fog"] = 1
+    return flags
+
+
 def build_links(scenario: Scenario):
-    """Return candidate HAP–GS optical links; recomputed after every run."""
+    """One visual bidirectional pair per GS/HAP; directed edges are created in the adapter.
+
+    W is a per-slot tuple ordered (fog,rain,snow); weather is evaluated against
+    the sampled balloon location AND optical-path ground projection.
+    """
     links = []
-    overrides = {(o.source, o.target): o.enabled for o in scenario.link_overrides}
+    overrides = {(o.source, o.target): o for o in scenario.link_overrides}
     for gs in scenario.ground_stations:
         for balloon in scenario.balloons:
             horizontal_km = distance_km(gs.lat, gs.lon, balloon.lat, balloon.lon)
             slant_km = math.hypot(horizontal_km, balloon.altitude_km)
             elevation_deg = math.degrees(math.atan2(balloon.altitude_km, max(1e-6, horizontal_km)))
-            loss_db = sum(w.attenuation_db for w in scenario.weather_regions
-                          if line_intersects_weather(gs, balloon, w))
+            effects = {"fog": 0, "rain": 0, "snow": 0}
+            loss_db = 0.0
+            for weather in scenario.weather_regions:
+                # Use ground-projection path overlap as an illustrative optical impact.
+                if line_intersects_weather(gs, balloon, weather):
+                    effect = getattr(weather, "effect", "fog")
+                    effects[effect if effect in effects else "fog"] = 1
+                    loss_db += weather.attenuation_db
+            override = overrides.get((gs.id, balloon.id))
+            visibility = override.visibility_km if override else 100.0
             links.append({"id": f"{gs.id}:{balloon.id}", "source": gs.id,
                           "target": balloon.id, "distance_km": slant_km,
                           "elevation_deg": elevation_deg, "weather_loss_db": loss_db,
+                          "weather_flags": (effects["fog"], effects["rain"], effects["snow"]),
+                          "visibility_km": visibility,
+                          "capacity_limit_bps": override.capacity_limit_bps if override else None,
                           "in_range": horizontal_km <= balloon.coverage_km,
-                          "enabled": overrides.get((gs.id, balloon.id), True)})
+                          "enabled": override.enabled if override else True})
     return links
 
 

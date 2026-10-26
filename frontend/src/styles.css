@@ -68,3 +68,21 @@
 .trajectory-slot-control {display:flex;align-items:center;gap:10px;padding:4px 0 11px;color:#b5c9d1;font-size:12px;flex-wrap:wrap;}
 .trajectory-slot-control select {color:#e3f1f3;background:#172f3e;border:1px solid #3b5b6d;border-radius:6px;padding:5px 7px;}
 .trajectory-slot-control small {opacity:.7;font-size:11px;}
+
+/* v0.6.1: readily visible effect selector in the weather inspector */
+.weather-type-picker{display:flex;flex-direction:column;gap:9px}
+.weather-type-picker>strong{font-size:11px;color:#b9d1d9;font-weight:750}
+.weather-type-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.weather-type-options button{min-width:0;min-height:57px;padding:6px 3px;border:1px solid #365061;border-radius:8px;background:#192b3b;color:#9fb7c7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9px;cursor:pointer}
+.weather-type-options button span{font-size:18px;line-height:21px}
+.weather-type-options button:hover{border-color:#88abbb;color:#fff}
+.weather-type-options button.active{border-color:#a3e8dc;background:#214845;color:#eafff9;box-shadow:inset 0 0 0 1px #5ad5c266}
+
+/* v0.6.2: pinned weather controls are visible without inspector scrolling. */
+.weather-quick-controls{padding:13px 17px 15px;background:#1a2a3a;border-bottom:1px solid #476073;flex-shrink:0}
+.weather-quick-heading{display:flex;flex-direction:column;gap:4px;margin-bottom:9px}
+.weather-quick-heading strong{font-size:10px;letter-spacing:1.2px;color:#e0eff8}
+.weather-quick-heading span{font-size:10px;color:#8ca9b8}
+.weather-quick-controls .weather-type-options button{min-height:60px;font-size:10px}
+.revision-warning{background:#4b3523;color:#ffe4ba;border:1px solid #a47946;border-radius:8px;padding:10px 13px;font-size:11px;line-height:1.6}
+.revision-warning strong{color:#fff1d6}

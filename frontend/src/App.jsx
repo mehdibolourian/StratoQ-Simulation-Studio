@@ -11,6 +11,7 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
+const STUDIO_VERSION = '0.6.2';
 const clone = (obj) => structuredClone(obj);
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
@@ -58,6 +59,7 @@ export default function App() {
   const [dirty, setDirty] = useState(true);
   const [running, setRunning] = useState(false);
   const [backend, setBackend] = useState('checking');
+  const [apiVersion, setApiVersion] = useState(null);
   const [error, setError] = useState('');
   const [frameIndex, setFrameIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -103,17 +105,17 @@ export default function App() {
     if (kind==='gs') {
       const id = `gs-${base}`;
       patchScenario(s=>s.ground_stations.push({id,name:`Ground station ${s.ground_stations.length+1}`,
-        lat: CENTER.lat-offset,lon:CENTER.lon+offset,capacity_bits:8000000,yaw_deg:0}));
+        lat: CENTER.lat-offset,lon:CENTER.lon+offset,capacity_bits:8000000,n_rx:1,n_tx:1,yaw_deg:0}));
       setSelectedId(id);
     } else if (kind==='hap') {
       const id=`hap-${base}`;
       patchScenario(s=>s.balloons.push({id,name:`Strato-${String(s.balloons.length+1).padStart(2,'0')}`,
-        lat:CENTER.lat+offset/2,lon:CENTER.lon-offset/2,altitude_km:15,coverage_km:85,yaw_deg:0}));
+        lat:CENTER.lat+offset/2,lon:CENTER.lon-offset/2,altitude_km:15,coverage_km:85,capacity_bits:12000000,n_rx:1,n_tx:1,yaw_deg:0}));
       setSelectedId(id);
     } else if(kind==='weather') {
       const id=`weather-${base}`;
-      patchScenario(s=>s.weather_regions.push({id,name:`Cloud field ${s.weather_regions.length+1}`,
-        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:4}));
+      patchScenario(s=>s.weather_regions.push({id,name:`Fog region ${s.weather_regions.length+1}`,
+        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:4,effect:"fog"}));
       setSelectedId(id);
     } else if (kind==='demand') {
       if(scenario.ground_stations.length < 2) {setError('Add two ground stations before creating a demand.');return;}
@@ -133,8 +135,16 @@ export default function App() {
   }
   function setLinkEnabled(link, enabled) {
     patchScenario(s => {
-      s.link_overrides = (s.link_overrides || []).filter(o => !(o.source === link.source && o.target === link.target));
-      if (!enabled) s.link_overrides.push({source:link.source,target:link.target,enabled:false});
+      const existing=(s.link_overrides||[]).find(o=>o.source===link.source&&o.target===link.target);
+      s.link_overrides=(s.link_overrides||[]).filter(o=>!(o.source===link.source&&o.target===link.target));
+      s.link_overrides.push({...existing,source:link.source,target:link.target,enabled});
+    });
+  }
+  function changeLinkProperty(link, field, value) {
+    patchScenario(s => {
+      const old=(s.link_overrides||[]).find(o=>o.source===link.source&&o.target===link.target);
+      s.link_overrides=(s.link_overrides||[]).filter(o=>!(o.source===link.source&&o.target===link.target));
+      s.link_overrides.push({...old,source:link.source,target:link.target,enabled:old?.enabled??true,[field]:value});
     });
   }
   async function uploadTrajectory(hapId, file) {
@@ -168,10 +178,16 @@ export default function App() {
       if (autoPlay && data.frames?.length) setPlaying(true);
     } catch (e) {
       if(id!==requestId.current) return;
-      setBackend('offline'); setError(`Cannot reach simulator: ${e.message}. Start FastAPI on port 8000.`);
+      setBackend('offline'); setError(`Simulation failed: ${e.message}. Check the FastAPI terminal for the full traceback (HTTP 500 means the server crashed; it is reachable).`);
     } finally {if(id===requestId.current) setRunning(false);}
   }
-  useEffect(() => {runSim(clone(INITIAL_SCENARIO), {silent:true});}, []);
+  useEffect(() => {
+    fetch('/api/health', {cache:'no-store'})
+      .then(r => { if (!r.ok) throw new Error('unavailable'); return r.json(); })
+      .then(body => setApiVersion(body.version || 'legacy'))
+      .catch(() => setApiVersion('unavailable'));
+    runSim(clone(INITIAL_SCENARIO), {silent:true});
+  }, []);
   useEffect(() => {
     if(!playing || !result) return;
     const interval=setInterval(()=>setFrameIndex(i=>i >= result.frames.length-1 ? 0 : i+1), 650);
@@ -195,7 +211,7 @@ export default function App() {
     <aside className="left-panel">
       <div className="brand-wrap">
         <div className="brand-symbol"><Layers3 size={23} strokeWidth={2.1}/></div>
-        <div><div className="brand-title">strato<span>Q</span><sup>STUDIO</sup></div><div className="brand-sub">QUANTUM NETWORK LAB</div></div>
+        <div><div className="brand-title">Strato<span>Q</span><sup>SIMULATOR</sup></div><div className="brand-sub">University of Waterloo</div></div>
       </div>
       <div className="side-scroll">
         <div className="section-pad">
@@ -224,7 +240,7 @@ export default function App() {
               selected={selectedId===h.id} onClick={()=>setSelectedId(h.id)} />)}
             {scenario.ground_stations.map(g=><EntityItem key={g.id} item={g} icon={SatelliteDish} subtitle={`${g.lat.toFixed(3)}° N  ${Math.abs(g.lon).toFixed(3)}° W`}
               selected={selectedId===g.id} onClick={()=>setSelectedId(g.id)} />)}
-            {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.attenuation_db} dB attenuation`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
+            {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.effect || 'fog'} · ${w.radius_km} km · ${w.attenuation_db} dB`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
             {scenario.demands.map(d=><EntityItem key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
               subtitle={`${fmtRate(d.rate_bps)} requested`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
           </div>
@@ -245,7 +261,7 @@ export default function App() {
       <header className="topbar">
         <div className="breadcrumb"><span>Projects</span><span className="chevron">/</span><strong>Northern Ontario</strong><span className="chevron">/</span><span>Network editor</span></div>
         <div className="topbar-right">
-          <Chip accent="demo">SYNTHETIC MODEL</Chip>
+          <Chip accent="demo">SYNTHETIC MODEL · UI {STUDIO_VERSION}</Chip>
           <span className="top-separator"/>
           <button className="header-text-button" onClick={()=>downloadJSON('stratoq-scenario.json',scenario)}><ArrowDownToLine size={16}/> Export scenario</button>
           <button className="avatar" title="Local user">SQ</button>
@@ -283,10 +299,13 @@ export default function App() {
           </div>
           {mode==='3d' && <div className="scene-corner bottom-left">
             <div className="visual-legend"><span><i className="legend-mark link"/> Optical link</span><span><i className="legend-mark demand"/> Demand route</span><span><i className="legend-mark cloud"/> Weather region</span></div>
-            <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag model to move':'Enable Move to drag models'}</div>
+            <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag any object to move':'Drag weather directly · Move tool for GS/HAP'}</div>
           </div>}
           {dirty&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
         </div>
+        {apiVersion !== null && apiVersion !== STUDIO_VERSION && <div className="revision-warning">
+          <strong>Version mismatch:</strong> UI {STUDIO_VERSION} / API {apiVersion}. Replace the backend files too and restart FastAPI.
+        </div>}
         {error && <div className="error-bar"><WifiOff size={15}/><span>{error}</span><button onClick={()=>setError('')}><X size={15}/></button></div>}
         <div className="timeline">
           <div className="timeline-header"><div className="timeline-title"><span className="timeline-play-icon"><Activity size={17}/></span>
@@ -312,6 +331,17 @@ export default function App() {
     <aside className="right-panel">
       <div className="inspector-top"><div><span className="tiny-overline">CONTROL CENTER</span><h2>Inspector <SlidersHorizontal size={17}/></h2></div>
         <IconButton icon={Settings2} label="Export simulation results" onClick={()=>result&&downloadJSON('stratoq-results.json',result)} disabled={!result}/></div>
+      {selectedType==='weather' && selected && <div className="weather-quick-controls">
+        <div className="weather-quick-heading"><strong>WEATHER TYPE</strong><span>Drag zone directly to move</span></div>
+        <div className="weather-type-options" role="group" aria-label="Weather effect">
+          {[['fog','☁','Fog / cloud'],['rain','☂','Rain'],['snow','❄','Snow']].map(([value, icon, label]) =>
+            <button key={value} type="button" aria-pressed={(selected.effect||'fog')===value}
+              className={(selected.effect||'fog')===value?'active':''}
+              onClick={()=>modifyItem(selected.id,'effect',value)}>
+              <span aria-hidden="true">{icon}</span>{label}
+            </button>)}
+        </div>
+      </div>}
       <div className="inspector-scroll">
         <div className="inspector-section">
           <GroupTitle>NETWORK PERFORMANCE <span className="metrics-caption">SLOT {frameIndex+1}</span></GroupTitle>
@@ -336,6 +366,11 @@ export default function App() {
                 <input type="checkbox" checked={selected.enabled} onChange={e=>setLinkEnabled(selected,e.target.checked)} />
               </label>
               <div className="selection-stat"><span>Status</span><b>{!selected.enabled?'Manually disabled':!selected.in_range?'Out of range':dirty?'Pending simulation':selected.active?'Active':'Unavailable'}</b></div>
+              <Numeric label="Visibility (V)" value={selected.visibility_km??100} unit="km" min={0.01} max={500}
+                onChange={v=>changeLinkProperty(selected,'visibility_km',v)}/>
+              <Numeric label="Link rate cap (optional)" value={selected.capacity_limit_bps??0} unit="bps" min={0}
+                onChange={v=>changeLinkProperty(selected,'capacity_limit_bps',v===0?null:v)}/>
+              <div className="selection-stat"><span>Weather (fog/rain/snow)</span><b>{(selected.weather_flags||[0,0,0]).join(' / ')}</b></div>
               <div className="selection-stat"><span>Capacity</span><b>{!dirty?fmtRate(selected.capacity_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Used by demands</span><b>{!dirty?fmtRate(selected.used_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
@@ -355,10 +390,18 @@ export default function App() {
                   unit="° E" onChange={v=>modifyItem(selected.id,'lon',v)}/></div>
               {selectedType==='hap'&&<><div className="field-grid"><Numeric label="Altitude" value={selected.altitude_km} unit="km" min={1} max={50} onChange={v=>modifyItem(selected.id,'altitude_km',v)} />
                 <Numeric label="Coverage" value={selected.coverage_km} unit="km" min={1} max={500} onChange={v=>modifyItem(selected.id,'coverage_km',v)} /></div></>}
-              {selectedType==='gs'&&<Numeric label="Buffer capacity" value={selected.capacity_bits} unit="bits" min={1} onChange={v=>modifyItem(selected.id,'capacity_bits',v)}/>} 
+              {(selectedType==='gs'||selectedType==='hap')&&<>
+                <Numeric label="QKP max (A_MAX)" value={selected.capacity_bits??(selectedType==='gs'?8000000:12000000)} unit="bits" min={1} onChange={v=>modifyItem(selected.id,'capacity_bits',v)}/>
+                <div className="field-grid">
+                  <Numeric label="Rx connections (N_RX)" value={selected.n_rx??1} min={0} step={1} onChange={v=>modifyItem(selected.id,'n_rx',v)}/>
+                  <Numeric label="Tx connections (N_TX)" value={selected.n_tx??1} min={0} step={1} onChange={v=>modifyItem(selected.id,'n_tx',v)}/>
+                </div>
+              </>} 
               {(selectedType==='gs'||selectedType==='hap') && <label className="field-label"><span>Model heading <em>{selected.yaw_deg||0}°</em></span>
                 <input type="range" min={-180} max={180} step={1} value={selected.yaw_deg||0}
                   onChange={e=>modifyItem(selected.id,'yaw_deg',Number(e.target.value))} /></label>}
+
+              {selectedType==='weather'&&<p className="field-help">Drag the region or its center handle directly in 3D, or drag the region or marker on the map. Play recalculates weather flags for each HAP and link at each slot.</p>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
                 <Numeric label="Extra path loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
               {selectedType==='hap' && <div className="trajectory-upload">

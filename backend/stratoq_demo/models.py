@@ -9,6 +9,8 @@ class GroundStation(BaseModel):
     lon: float = Field(ge=-180, le=180)
     capacity_bits: float = Field(default=8_000_000, gt=0)
     yaw_deg: float = Field(default=0, ge=-360, le=360)
+    n_rx: int = Field(default=1, ge=0, le=10000)
+    n_tx: int = Field(default=1, ge=0, le=10000)
 
 
 class Balloon(BaseModel):
@@ -20,6 +22,8 @@ class Balloon(BaseModel):
     coverage_km: float = Field(default=85, gt=0, le=500)
     capacity_bits: float = Field(default=12_000_000, gt=0)
     yaw_deg: float = Field(default=0, ge=-360, le=360)
+    n_rx: int = Field(default=1, ge=0, le=10000)
+    n_tx: int = Field(default=1, ge=0, le=10000)
     trajectory_id: str | None = None
     trajectory_name: str | None = None
 
@@ -32,12 +36,28 @@ class Demand(BaseModel):
 
 
 class WeatherRegion(BaseModel):
+    # Canonical weather type. Kept on the validated model so setup.py can
+    # access region.effect without an AttributeError.
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_legacy_effect(cls, value):
+        if not isinstance(value, dict):
+            return value
+        value = value.copy()
+        if "effect" not in value:
+            value["effect"] = value.get("weather_type", value.get("type", "fog"))
+        if isinstance(value["effect"], str):
+            effect = value["effect"].strip().lower()
+            value["effect"] = {"cloud": "fog", "cloud/fog": "fog", "fog/cloud": "fog"}.get(effect, effect)
+        return value
+
     id: str
     name: str
     lat: float = Field(ge=-90, le=90)
     lon: float = Field(ge=-180, le=180)
     radius_km: float = Field(default=17, gt=0, le=500)
     attenuation_db: float = Field(default=3.0, ge=0, le=40)
+    effect: Literal["fog", "rain", "snow"] = "fog"
 
 
 class SimulationConfig(BaseModel):
@@ -50,6 +70,8 @@ class OpticalLinkOverride(BaseModel):
     source: str
     target: str
     enabled: bool = True
+    visibility_km: float = Field(default=100, gt=0, le=500)
+    capacity_limit_bps: float | None = Field(default=None, ge=0)
 
 
 class Scenario(BaseModel):
@@ -91,6 +113,9 @@ class LinkState(BaseModel):
     elevation_deg: float
     capacity_bps: float
     weather_loss_db: float
+    visibility_km: float = 100.0
+    weather_flags: tuple[int, int, int] = (0, 0, 0)
+    capacity_limit_bps: float | None = None
     stored_bits: float
     used_bps: float = 0.0
     active: bool
@@ -120,6 +145,7 @@ class SimulationFrame(BaseModel):
     time_seconds: int
     links: list[LinkState]
     positions: dict[str, dict[str, float]] = Field(default_factory=dict)
+    weather_by_hap: dict[str, dict[str, int]] = Field(default_factory=dict)
     demands: list[DemandState]
     qkps: list[QKPState] = Field(default_factory=list)
     stored_bits_total: float

@@ -6,7 +6,7 @@ from stratoq_demo.setup import default_scenario
 from stratoq_demo.stratoq_adapter import simulate
 from stratoq_demo.trajectories import register
 
-app = FastAPI(title="StratoQ Studio API", version="0.1.0")
+app = FastAPI(title="StratoQ Studio API", version="0.6.2")
 app.add_middleware(
     CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"],
@@ -15,7 +15,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "engine": "synthetic-demo"}
+    return {"status": "ok", "engine": "synthetic-demo", "version": "0.6.2"}
 
 
 @app.get("/api/scenario/default", response_model=Scenario)

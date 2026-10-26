@@ -264,22 +264,100 @@ function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange,
   </group>;
 }
 
-function Cloud({ weather, selected, onSelect }) {
-  const x = position3D(weather)[0], z = position3D(weather)[2];
-  return <group position={[x, 0, z]} onClick={(e) => { e.stopPropagation(); onSelect(weather.id); }}>
-    <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[weather.radius_km, 48]} />
-      <meshBasicMaterial color="#aa8bff" transparent opacity={0.08} depthWrite={false} side={THREE.DoubleSide} /></mesh>
-    <mesh position={[0, 0.035, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[weather.radius_km - 0.15, weather.radius_km, 64]} />
-      <meshBasicMaterial color={selected ? '#fff' : '#b4a3ff'} transparent opacity={0.64} side={THREE.DoubleSide} /></mesh>
-    {[[-3.8, 8.5, 0, 4], [0.5, 9.6, 0, 5.4], [4.4, 8.1, 1.6, 3.9], [1, 8.1, -3.1, 4]].map(([xx, yy, zz, s], i) =>
-      <mesh key={i} position={[xx, yy, zz]} scale={[s * 1.2, s * 0.55, s]}>
-        <sphereGeometry args={[1, 18, 12]} />
-        <meshStandardMaterial color="#8b9fc1" transparent opacity={0.55} depthWrite={false} />
+function WeatherParticles({ effect, radius }) {
+  const group = useRef();
+  const isFog = effect === 'fog';
+  const isRain = effect === 'rain';
+  // Deterministic particle distribution. Visuals are illustrative, not meteorology.
+  const count = isFog ? 12 : 110;
+  const points = React.useMemo(() => Array.from({length: count}, (_, i) => {
+    const angle = i * 2.399963;
+    const radial = Math.sqrt((i + 0.5) / count) * radius * 0.88;
+    return [Math.cos(angle)*radial, 1 + ((i*17)%31)/31*13, Math.sin(angle)*radial];
+  }), [count, radius]);
+  useFrame(({clock}) => {
+    if (!group.current) return;
+    const speed = isRain ? 4.5 : isFog ? 0.18 : 0.85;
+    group.current.children.forEach((obj, i) => {
+      obj.position.y = 1 + ((points[i][1] - 1 - clock.elapsedTime*speed + 1000) % 14);
+      if (isFog) obj.position.x = points[i][0] + Math.sin(clock.elapsedTime*0.2 + i)*0.4;
+    });
+  });
+  return <group ref={group}>
+    {points.map(([x,y,z],i) => isFog ?
+      <mesh key={i} raycast={() => null} position={[x,y,z]} scale={[Math.min(7,radius*.38),1.6,Math.min(7,radius*.38)]}>
+        <sphereGeometry args={[1,10,8]}/>
+        <meshStandardMaterial color="#a6b5cf" transparent opacity={0.07} depthWrite={false}/>
+      </mesh> : isRain ?
+      <mesh key={i} raycast={() => null} position={[x,y,z]}><cylinderGeometry args={[.018,.018,.8,4]}/>
+        <meshBasicMaterial color="#8fbcff" transparent opacity={.55} depthWrite={false}/>
+      </mesh> :
+      <mesh key={i} raycast={() => null} position={[x,y,z]}><sphereGeometry args={[.10,5,5]}/>
+        <meshBasicMaterial color="#f3f7ff" transparent opacity={.78} depthWrite={false}/>
       </mesh>)}
-    <Html position={[0, 13, 0]} center distanceFactor={80} style={{pointerEvents: 'none'}}>
-      <div className="weather-label">☁ {weather.attenuation_db} dB · {weather.radius_km} km</div>
+  </group>;
+}
+
+function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDragStart, onDragEnd }) {
+  const [x,,z] = position3D(weather);
+  const dragging = useRef(false);
+  const offset = useRef([0,0]);
+  const radius = weather.radius_km;
+  const effect = weather.effect || 'fog';
+  const hue = effect === 'rain' ? '#6eabed' : effect === 'snow' ? '#dcecff' : '#aa8bff';
+  function intersection(e) {
+    const hit = new THREE.Vector3();
+    return e.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0,1,0),0),hit) ? hit : null;
+  }
+  function down(e) {
+    // Weather zones drag directly; unlike GS/HAP they do not need the Move toggle.
+    e.stopPropagation();
+    onSelect(weather.id);
+    const hit = intersection(e);
+    if (!hit) return;
+    offset.current = [x - hit.x, z - hit.z];
+    dragging.current = true;
+    try { e.target.setPointerCapture(e.pointerId); } catch { /* browser fallback */ }
+    onDragStart();
+    document.body.style.cursor = 'grabbing';
+  }
+  function move(e) {
+    if (!dragging.current)return;
+    e.stopPropagation();const hit=intersection(e);if(!hit)return;
+    const loc=fromWorld(hit.x+offset.current[0],hit.z+offset.current[1]);
+    onPositionChange(weather.id, Number(loc.lat.toFixed(5)), Number(loc.lon.toFixed(5)));
+  }
+  function up(e) {
+    if(!dragging.current)return;
+    e.stopPropagation();dragging.current=false;
+    try{e.target.releasePointerCapture(e.pointerId);}catch{}document.body.style.cursor="auto";onDragEnd();
+  }
+  return <group position={[x,0,z]}
+    onPointerDown={down} onPointerMove={move} onPointerUp={up}
+    onPointerCancel={up} onPointerMissed={() => { if (dragging.current) {dragging.current=false;onDragEnd();} }}
+    onClick={e=>{e.stopPropagation();onSelect(weather.id);}}
+    onPointerOver={()=>{document.body.style.cursor=dragging.current?'grabbing':'grab';}}
+    onPointerOut={()=>{if(!dragging.current) document.body.style.cursor='auto';}}>
+    {/* A raised visible grab handle keeps pointer hits above ground and particles. */}
+    <mesh position={[0,1.7,0]} castShadow>
+      <sphereGeometry args={[1.05,20,12]} />
+      <meshStandardMaterial color={hue} emissive={hue} emissiveIntensity={selected ? .38 : .13} roughness={.45} />
+    </mesh>
+    <mesh position={[0,2.0,0]} rotation={[-Math.PI/2,0,0]}>
+      <torusGeometry args={[1.30,.11,10,30]}/>
+      <meshBasicMaterial color={selected?'#ffffff':hue}/>
+    </mesh>
+    <mesh position={[0,.01,0]} rotation={[-Math.PI/2,0,0]}>
+      <circleGeometry args={[radius,64]}/>
+      <meshBasicMaterial color={hue} transparent opacity={selected?.21:.085} side={THREE.DoubleSide} depthWrite={false}/>
+    </mesh>
+    <mesh position={[0,0.035,0]} rotation={[-Math.PI/2,0,0]}>
+      <ringGeometry args={[Math.max(.1,radius-.16),radius,64]}/>
+      <meshBasicMaterial color={selected?'#ffffff':hue} transparent opacity={.8} side={THREE.DoubleSide}/>
+    </mesh>
+    <WeatherParticles effect={effect} radius={radius}/>
+    <Html position={[0,15,0]} center distanceFactor={75} style={{pointerEvents:'none'}}>
+      <div className="weather-label">{effect==='rain'?'☂':effect==='snow'?'❄':'☁'} {effect} · {radius} km</div>
     </Html>
   </group>;
 }
@@ -331,7 +409,7 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
     <Html position={[55, 0, 61]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LONGITUDE →</div></Html>
     <Html position={[-61, 0, -56]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LATITUDE ↑</div></Html>
     <Html position={[0, 0, 52]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label subtle">{CENTER.lat.toFixed(3)}° N · {Math.abs(CENTER.lon).toFixed(3)}° W</div></Html>
-    {scenario.weather_regions.map(w => <Cloud key={w.id} weather={w} selected={selectedId === w.id} onSelect={onSelect} />)}
+    {scenario.weather_regions.map(w => <Cloud key={w.id} weather={w} selected={selectedId === w.id} onSelect={onSelect} dragMode={dragMode} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} />)}
     {links.map(link => {
       const a = coords[link.source], b = coords[link.target];
       if (!a || !b) return null;
