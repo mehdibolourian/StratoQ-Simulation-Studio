@@ -95,3 +95,9 @@
 .physics-progress-track>div{height:100%;background:#9ce9d9;transition:width .25s ease}
 .physics-progress small{font-size:9px;color:#a2b7c1}
 .physics-last-run{display:flex;gap:6px;align-items:center;margin-top:11px;color:#a8e8cc;font-size:10px}
+
+/* v0.9 – weather intensity edit, independent of region radius */
+.weather-intensity-control{padding:13px;border:1px solid #476073;border-radius:9px;background:#1d3140;display:flex;flex-direction:column;gap:9px}
+.weather-intensity-control>strong{font-size:11px;color:#d4eee9}
+.weather-intensity-control .field-grid{grid-template-columns:1fr}
+.weather-intensity-control .field-help{margin:0;color:#91aab9;line-height:1.5;font-size:10px}

@@ -10,7 +10,7 @@ from pathlib import Path
 import sysconfig
 import importlib.util
 
-app = FastAPI(title="StratoQ Studio API", version="0.8.0")
+app = FastAPI(title="StratoQ Studio API", version="0.9.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"],
@@ -19,7 +19,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "engine": "balloon-qnet-theoretical", "version": "0.8.0"}
+    return {"status": "ok", "engine": "balloon-qnet-theoretical", "version": "0.9.0"}
 
 
 @app.get("/api/scenario/default", response_model=Scenario)

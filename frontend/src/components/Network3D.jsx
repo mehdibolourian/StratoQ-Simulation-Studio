@@ -264,12 +264,14 @@ function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange,
   </group>;
 }
 
-function WeatherParticles({ effect, radius }) {
+function WeatherParticles({ effect, radius, visibilityKm=0.5, precipitationRate=5 }) {
   const group = useRef();
   const isFog = effect === 'fog';
   const isRain = effect === 'rain';
   // Deterministic particle distribution. Visuals are illustrative, not meteorology.
-  const count = isFog ? 12 : 110;
+  const density = isFog ? Math.max(0.3, Math.min(3.5, 0.5 / Math.max(0.05, visibilityKm)))
+    : Math.max(0, Math.min(4, precipitationRate / (isRain ? 5 : 2)));
+  const count = isFog ? Math.round(14 * density) : Math.round(100 * Math.sqrt(density));
   const points = React.useMemo(() => Array.from({length: count}, (_, i) => {
     const angle = i * 2.399963;
     const radial = Math.sqrt((i + 0.5) / count) * radius * 0.88;
@@ -277,7 +279,7 @@ function WeatherParticles({ effect, radius }) {
   }), [count, radius]);
   useFrame(({clock}) => {
     if (!group.current) return;
-    const speed = isRain ? 4.5 : isFog ? 0.18 : 0.85;
+    const speed = isRain ? 4.5 * Math.max(0.5, Math.sqrt(density)) : isFog ? 0.18 : 0.85 * Math.max(0.5, Math.sqrt(density));
     group.current.children.forEach((obj, i) => {
       obj.position.y = 1 + ((points[i][1] - 1 - clock.elapsedTime*speed + 1000) % 14);
       if (isFog) obj.position.x = points[i][0] + Math.sin(clock.elapsedTime*0.2 + i)*0.4;
@@ -355,9 +357,9 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
       <ringGeometry args={[Math.max(.1,radius-.16),radius,64]}/>
       <meshBasicMaterial color={selected?'#ffffff':hue} transparent opacity={.8} side={THREE.DoubleSide}/>
     </mesh>
-    <WeatherParticles effect={effect} radius={radius}/>
+    <WeatherParticles effect={effect} radius={radius} visibilityKm={weather.visibility_km??0.5} precipitationRate={weather.precipitation_rate_mm_h??5}/>
     <Html position={[0,15,0]} center distanceFactor={75} style={{pointerEvents:'none'}}>
-      <div className="weather-label">{effect==='rain'?'☂':effect==='snow'?'❄':'☁'} {effect} · {radius} km</div>
+      <div className="weather-label">{effect==='rain'?'☂':effect==='snow'?'❄':'☁'} {effect} · {radius} km · {effect==='fog' ? `${weather.visibility_km??0.5} km vis` : `${weather.precipitation_rate_mm_h??5} mm/h`}</div>
     </Html>
   </group>;
 }

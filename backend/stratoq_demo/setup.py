@@ -5,6 +5,7 @@ No physical-layer / security guarantees are implied by its outputs.
 """
 import math
 from .models import Scenario
+from .weather_physics import regional_weather_loss_db
 
 
 def distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -59,7 +60,7 @@ def build_links(scenario: Scenario):
                 if line_intersects_weather(gs, balloon, weather):
                     effect = getattr(weather, "effect", "fog")
                     effects[effect if effect in effects else "fog"] = 1
-                    loss_db += weather.attenuation_db
+                    loss_db += regional_weather_loss_db(gs, balloon, weather)
             override = overrides.get((gs.id, balloon.id))
             visibility = override.visibility_km if override else 100.0
             links.append({"id": f"{gs.id}:{balloon.id}", "source": gs.id,

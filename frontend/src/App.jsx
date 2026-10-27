@@ -11,7 +11,7 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
-const STUDIO_VERSION = '0.8.0';
+const STUDIO_VERSION = '0.9.0';
 const clone = (obj) => structuredClone(obj);
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
@@ -117,7 +117,7 @@ export default function App() {
     } else if(kind==='weather') {
       const id=`weather-${base}`;
       patchScenario(s=>s.weather_regions.push({id,name:`Fog region ${s.weather_regions.length+1}`,
-        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:4,effect:"fog"}));
+        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:0,effect:"fog",visibility_km:0.5,precipitation_rate_mm_h:5}));
       setSelectedId(id);
     } else if (kind==='demand') {
       if(scenario.ground_stations.length < 2) {setError('Add two ground stations before creating a demand.');return;}
@@ -259,7 +259,7 @@ export default function App() {
               selected={selectedId===h.id} onClick={()=>setSelectedId(h.id)} />)}
             {scenario.ground_stations.map(g=><EntityItem key={g.id} item={g} icon={SatelliteDish} subtitle={`${g.lat.toFixed(3)}° N  ${Math.abs(g.lon).toFixed(3)}° W`}
               selected={selectedId===g.id} onClick={()=>setSelectedId(g.id)} />)}
-            {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.effect || 'fog'} · ${w.radius_km} km · ${w.attenuation_db} dB`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
+            {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.effect || 'fog'} · ${w.radius_km} km · ${w.effect==='fog' ? `${w.visibility_km??0.5} km vis.` : `${w.precipitation_rate_mm_h??5} mm/h`}`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
             {scenario.demands.map(d=><EntityItem key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
               subtitle={`${fmtRate(d.rate_bps)} requested`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
           </div>
@@ -433,8 +433,15 @@ export default function App() {
                   onChange={e=>modifyItem(selected.id,'yaw_deg',Number(e.target.value))} /></label>}
 
               {selectedType==='weather'&&<p className="field-help">Drag the region or its center handle directly in 3D, or drag the region or marker on the map. Play recalculates weather flags for each HAP and link at each slot.</p>}
+              {selectedType==='weather' && <div className="weather-intensity-control">
+                <strong>{selected.effect==='fog'?'Fog density / visibility':selected.effect==='snow'?'Snowfall rate (water equivalent)':'Rainfall rate'}</strong>
+                <div className="field-grid">
+                  {selected.effect==='fog' ? <Numeric label="Meteorological visibility" value={selected.visibility_km??0.5} min={0.05} max={100} step={0.05} unit="km" onChange={v=>modifyItem(selected.id,'visibility_km',v)} /> : <Numeric label="Precipitation rate" value={selected.precipitation_rate_mm_h??5} min={0} max={500} step={0.5} unit="mm/h" onChange={v=>modifyItem(selected.id,'precipitation_rate_mm_h',v)} />}
+                </div>
+                <p className="field-help">{selected.effect==='fog'?'Lower visibility means denser fog.':'Higher rate increases atmospheric loss and particle density. Snow uses liquid-water equivalent mm/h.'} The rate-to-attenuation scaling is approximate; see WEATHER-INTENSITY-V09.md.</p>
+              </div>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
-                <Numeric label="Extra path loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
+                <Numeric label="Optional extra loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
               {selectedType==='hap' && <div className="trajectory-upload">
                 <strong>HAP trajectory</strong>
                 <label className="trajectory-upload-button">{uploadingTrajectory?'Importing…':'Upload CSV / Excel'}

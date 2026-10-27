@@ -58,6 +58,11 @@ class WeatherRegion(BaseModel):
     radius_km: float = Field(default=17, gt=0, le=500)
     attenuation_db: float = Field(default=3.0, ge=0, le=40)
     effect: Literal["fog", "rain", "snow"] = "fog"
+    # Fog intensity is visibility; precipitation intensity is water equivalent in mm/h.
+    # These are independent of the optional legacy extra attenuation override.
+    visibility_km: float | None = Field(default=None, gt=0, le=100)
+    precipitation_rate_mm_h: float | None = Field(default=None, ge=0, le=500)
+
 
 
 class OpticalParameters(BaseModel):
