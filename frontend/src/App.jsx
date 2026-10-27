@@ -11,9 +11,16 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
-const STUDIO_VERSION = '1.0.5';
+const STUDIO_VERSION = '1.0.5'; // API contract unchanged; link-state visualization build v1.1.3
 const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
+function migrateAllocator(scenario) {
+  const result=clone(scenario);
+  if (result.config?.allocation_mode === 'random') result.config.allocation_mode = 'mcr_q';
+  else if (result.config?.allocation_mode === 'greedy') result.config.allocation_mode = 'scar_q';
+  else if (!result.config?.allocation_mode) result.config.allocation_mode = 'scar_q';
+  return result;
+}
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
 const toClock = (secs) => `${String(Math.floor(secs/3600)).padStart(2,'0')}:${String(Math.floor(secs%3600/60)).padStart(2,'0')}`;
@@ -52,13 +59,13 @@ function downloadJSON(filename, data) {
 const WORKSPACE_KEY = 'stratoq.workspace.v104';
 const makeExperiment = (scenario, name='Experiment 1') => ({
   id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random(),
-  name, scenario: clone(scenario), selectedId: null, result: null, dirty: true, frameIndex: 0,
+  name, scenario: migrateAllocator(scenario), selectedId: null, result: null, dirty: true, frameIndex: 0,
 });
 function readWorkspace() {
   try {
     const stored = JSON.parse(localStorage.getItem(WORKSPACE_KEY) || 'null');
     if (stored?.experiments?.length && stored.experiments.every(e => e.scenario?.config && Array.isArray(e.scenario.ground_stations))) {
-      return {experiments:stored.experiments.map(e => ({...e, result:null, dirty:true})),
+      return {experiments:stored.experiments.map(e => ({...e, scenario:migrateAllocator(e.scenario), result:null, dirty:true})),
         activeId:stored.experiments.some(e=>e.id===stored.activeId) ? stored.activeId : stored.experiments[0].id};
     }
   }catch(_){}
@@ -142,7 +149,7 @@ export default function App() {
   }
   function loadExperiment(exp) {
     ++requestId.current; ++weatherRequestId.current;
-    setScenario(clone(exp.scenario));setSelectedId(exp.selectedId || null);
+    setScenario(migrateAllocator(exp.scenario));setSelectedId(exp.selectedId || null);
     setResult(exp.result || null);setDirty(exp.dirty ?? true);setFrameIndex(exp.frameIndex || 0);
     setRunning(false);setPlaying(false);setPhysicsProgress(null);setError('');
     setEra5Preview([]);setEra5Meta(null);setEra5Job(null);setEra5Loading(false);
@@ -219,7 +226,10 @@ export default function App() {
   const selected = nodes.find(n => n.id === selectedId) || scenario.demands.find(n => n.id === selectedId) || selectedLink;
   const selectedType = selectedLink ? 'link' : selectedId?.startsWith('gs-') ? 'gs'
     : selectedId?.startsWith('hap-') ? 'hap' : selectedId?.startsWith('weather-') ? 'weather' : 'demand';
-  const activeLinks = currentFrame?.links.filter(l => l.active).length || 0;
+  const activeLinks = currentFrame?.links.filter(l => l.activated).length || 0;
+  const qkpOnlyLinks = currentFrame?.links.filter(l => l.allocated && !l.activated).length || 0;
+  const slotSolver = currentFrame?.optimizer;
+  const solverSummary = result?.summary;
   const served = currentFrame?.served_bps_total;
   const requested = scenario.demands.reduce((n,d)=>n+d.rate_bps, 0);
   const satisfaction = currentFrame && requested > 0 ? Math.round(100*served/requested) : null;
@@ -409,7 +419,7 @@ export default function App() {
       if(autoPlay && data.frames?.length)setPlaying(true);
     }catch(e){
       if(id!==requestId.current)return;
-      setError(`Physical simulation failed: ${e.message}. See FastAPI terminal. No approximate rates were substituted.`);
+      setError(`Simulation failed: ${e.message}. See FastAPI terminal. No approximate rates were substituted.`);
     }finally{if(id===requestId.current)setRunning(false);}
   }
   useEffect(() => {
@@ -440,7 +450,7 @@ export default function App() {
   const totalFrames=(!dirty ? result?.frames.length : scenario.config.slots)||scenario.config.slots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
-  return <div className="app-shell" data-ui-build="1.0.7" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+  return <div className="app-shell" data-ui-build="1.1.3" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
     <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
@@ -541,7 +551,7 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-identity"><button className="panel-toggle" onClick={()=>setLeftOpen(v=>!v)} title={leftOpen?'Collapse workspace':'Expand workspace'}>{leftOpen?<PanelLeftClose size={18}/>:<PanelLeftOpen size={18}/>}</button><span className="topbar-current">{activeExperiment?.name}</span></div>
         <div className="topbar-right">
-          <Chip accent="demo">STRATOQ · {STUDIO_VERSION} · UI 1.0.7</Chip>
+          <Chip accent="demo">STRATOQ · {STUDIO_VERSION} · UI 1.1.3</Chip>
           <button className="header-text-button" onClick={()=>downloadJSON('stratoq-experiment.json',scenario)}><ArrowDownToLine size={15}/> Export experiment</button>
           <button className="header-text-button" onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={15}/> Import</button>
           <button className="header-text-button workspace-export" onClick={exportWorkspace}><ArrowDownToLine size={15}/> Export workspace</button>
@@ -579,7 +589,7 @@ export default function App() {
             </div>
           </div>
           {mode==='3d' && <div className="scene-corner bottom-left">
-            <div className="visual-legend"><span><i className="legend-mark link"/> Optical link</span><span><i className="legend-mark demand"/> Demand route</span><span><i className="legend-mark cloud"/> Weather region</span></div>
+            <div className="visual-legend"><span><i className="legend-mark optical-live"/> Optical generation</span><span><i className="legend-mark qkp-live"/> Stored-key flow</span><span><i className="legend-mark link"/> Idle optical link</span>{currentFrame && <span className="legend-live-count">{activeLinks} optical · {qkpOnlyLinks} QKP · {currentFrame.links.length-activeLinks-qkpOnlyLinks} idle</span>}</div>
             <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag any object to move':'Drag weather directly · Move tool for GS/HAP'}</div>
           </div>}
           {running&&physicsProgress&&<div className="scene-corner bottom-right"><div className="pending-indicator">Physical model · {physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'preparing'} · {physicsProgress.cached||0} cached</div></div>}
@@ -630,11 +640,23 @@ export default function App() {
           <GroupTitle>NETWORK PERFORMANCE <span className="metrics-caption">SLOT {frameIndex+1}</span></GroupTitle>
           <div className="kpi-grid">
             <div className="kpi-card"><div className="kpi-label"><Activity size={14}/> Served rate</div><b>{fmtRate(served)}</b><small>{satisfaction===null?'—':`${satisfaction}% of requested`}</small></div>
-            <div className="kpi-card"><div className="kpi-label"><Wifi size={14}/> Active links</div><b>{currentFrame?activeLinks:'—'} <i>/ {currentFrame?.links.length||'—'}</i></b><small>GS ↔ HAP</small></div>
+            <div className="kpi-card"><div className="kpi-label"><Wifi size={14}/> Optical / QKP</div><b>{currentFrame?`${activeLinks} / ${qkpOnlyLinks}`:'—'}</b><small>Fresh generation / stored-key-only links</small></div>
             <div className="kpi-card"><div className="kpi-label"><Layers3 size={14}/> Key buffers</div><b>{fmtBits(currentFrame?.stored_bits_total)}</b><small>Total stored bits</small></div>
             <div className="kpi-card"><div className="kpi-label"><Gauge size={14}/> Satisfaction</div><b>{satisfaction===null?'—':`${satisfaction}%`}</b><small>Current slot</small></div>
           </div>
-          <div className="metric-notice"><Sparkles size={15}/><span>Link rates use a Gaussian-beam BB84 analytical approximation; allocation is a placeholder. Not validated StratoQ results.</span></div>
+          {slotSolver ? <div className="solver-audit" data-solver-status={slotSolver.solver_status}>
+            <div className="solver-audit-title"><Gauge size={15}/><b>GUROBI ALLOCATION · SLOT {frameIndex+1}</b><strong>{slotSolver.solver_status}</strong></div>
+            <div className="solver-audit-stats">
+              <span>Models optimized <b>{slotSolver.candidate_solves}</b></span>
+              <span>Solver time <b>{Number(slotSolver.gurobi_runtime_seconds||0).toFixed(4)} s</b></span>
+              <span>Selected routes <b>{slotSolver.selected_paths}</b></span>
+              <span>Activated optical links <b>{slotSolver.activated_links}</b></span>
+              <span>Positive-capacity links <b>{slotSolver.positive_capacity_links}</b></span>
+              <span>Variables / constraints <b>{slotSolver.gurobi_variable_count} / {slotSolver.gurobi_constraint_count}</b></span>
+            </div>
+            <div className={`solver-audit-note ${!slotSolver.activated_links?'inactive':''}`}>{slotSolver.selection_note}</div>
+            <small className="solver-audit-footer">Gurobi {slotSolver.gurobi_version} · {solverSummary?.gurobi_optimized_models??0} total optimized models · {Number(solverSummary?.gurobi_runtime_seconds||0).toFixed(4)} s cumulative solver time</small>
+          </div> : <div className="metric-notice"><Sparkles size={15}/><span>Run the simulation to see actual Gurobi solve counts and per-slot activated optical links. A fast result can reflect cached channel rates or an empty route set.</span></div>}
         </div>
         <div className="inspector-section">
           <GroupTitle>SELECTED OBJECT {selected && <Chip accent={selectedType==='hap'?'warm':'neutral'}>{selectedType.toUpperCase()}</Chip>}</GroupTitle>
@@ -648,7 +670,7 @@ export default function App() {
               <label className="field-label"><span>Manually enabled</span>
                 <input type="checkbox" checked={selected.enabled} onChange={e=>setLinkEnabled(selected,e.target.checked)} />
               </label>
-              <div className="selection-stat"><span>Status</span><b>{!selected.enabled?'Manually disabled':!selected.in_range?'Out of range':dirty?'Pending simulation':selected.active?'Active':'Unavailable'}</b></div>
+              <div className="selection-stat"><span>Status</span><b>{!selected.enabled?'Manually disabled':!selected.in_range?'Out of range':dirty?'Pending simulation':selected.activated?'Optically activated':selected.allocated?'Using stored keys':selected.active?'Available · idle':'Unavailable'}</b></div>
               <Numeric label="Clear-air visibility (V)" value={selected.visibility_km??100} unit="km" min={0.01} max={500}
                 onChange={v=>changeLinkProperty(selected,'visibility_km',v)}/>
               <Numeric label="Link rate cap (optional)" value={selected.capacity_limit_bps??0} unit="bps" min={0}
@@ -656,6 +678,7 @@ export default function App() {
               <div className="selection-stat"><span>Weather (fog/rain/snow)</span><b>{(selected.weather_flags||[0,0,0]).join(' / ')}</b></div>
               <div className="selection-stat"><span>Capacity</span><b>{!dirty?fmtRate(selected.capacity_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Used by demands</span><b>{!dirty?fmtRate(selected.used_bps):'Run to update'}</b></div>
+              {!dirty && <p className="field-help">{selected.activated ? 'GOLD: Optical generation enabled on this GS–HAP link.' : selected.allocated ? 'AMBER: This GS–HAP link carries keys from existing QKP storage only.' : 'BLUE: No key traffic is assigned to this link in the selected time slot.'}</p>}
               <div className="selection-stat"><span>Slant distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
               <div className="selection-stat"><span>GS elevation</span><b>{Number.isFinite(selected.elevation_deg) ? `${selected.elevation_deg.toFixed(1)}°` : 'Run to update'}</b></div>
               <div className="selection-stat"><span>Weather attenuation</span><b>{Number.isFinite(selected.weather_loss_db) ? `${selected.weather_loss_db.toFixed(1)} dB` : 'Run to update'}</b></div>
@@ -709,7 +732,10 @@ export default function App() {
                 {selected.trajectory_id && <button className="trajectory-clear" onClick={()=>patchScenario(s=>{const h=s.balloons.find(h=>h.id===selected.id);delete h.trajectory_id;delete h.trajectory_name;})}>Remove trajectory</button>}
               </div>}
               {selectedType==='hap' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.target===selected.id).length}</b></div>}
+              {selectedType==='hap' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.target===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.target===selected.id&&l.allocated&&!l.activated).length}</b></div>}
+              {selectedType==='hap' && selected.trajectory_id && currentFrame?.positions?.[selected.id] && <div className="selection-stat"><span>Current HAP position (trajectory)</span><b>{currentFrame.positions[selected.id].lat?.toFixed(4)}°, {currentFrame.positions[selected.id].lon?.toFixed(4)}°</b></div>}
               {selectedType==='gs' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.source===selected.id).length}</b></div>}
+              {selectedType==='gs' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.source===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.source===selected.id&&l.allocated&&!l.activated).length}</b></div>}
             </div>}
           </>:<div className="empty-selection"><MousePointer2 size={25}/><span>Choose an object in the scene to inspect its parameters.</span></div>}
         </div>
@@ -718,13 +744,21 @@ export default function App() {
           {useEra5 && <p className="field-help">Historical ERA5 date: {era5Date} UTC. At most 24 h; changing the time slot resamples the same hourly dataset. Manual regions add to ERA5 attenuation. ERA5 animation shows up to 75 visual cells; link physics samples the full grid.</p>}
           <div className="field-grid"><Numeric label="Time slots" value={scenario.config.slots} min={1} max={1500} step={1} onChange={v=>patchScenario(s=>s.config.slots=v)} />
             <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>{s.config.slot_seconds=v;if(s.config.weather_source==='era5')s.config.slots=Math.min(1500,Math.ceil(86400/v));})} /></div>
-          <div className="field-grid">
-            <label className="field-label"><span>Placeholder routing</span>
-              <select value={scenario.config.allocation_mode || 'random'} onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
-                <option value="random">Random (seeded)</option><option value="greedy">Greedy (largest QKP)</option>
+          <div className="allocator-picker">
+            <label className="field-label"><span>Resource allocation algorithm</span>
+              <select value={['scar_q','mcr_q'].includes(scenario.config.allocation_mode) ? scenario.config.allocation_mode : 'scar_q'}
+                onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
+                <option value="scar_q">SCAR-Q · Scarcity &amp; contention</option>
+                <option value="mcr_q">MCR-Q · Monte Carlo routing</option>
               </select>
             </label>
-            <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=v)}/>
+            <p className="field-help">SCAR-Q greedily prioritizes scarce demands and less-contended paths (one Gurobi solve per slot). MCR-Q samples randomized path assignments, solves one Gurobi key-flow LP per sample, and retains the candidate serving the most keys. Both carry QKP storage across slots.</p>
+            {scenario.config.allocation_mode === 'mcr_q' && <div className="field-grid">
+              <Numeric label="Monte Carlo samples" value={scenario.config.mcr_samples ?? 3} min={1} max={100} step={1} onChange={v=>patchScenario(s=>s.config.mcr_samples=Math.max(1,Math.min(100,Math.round(v))))} />
+              <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=Math.max(0,Math.round(v)))} />
+            </div>}
+            {scenario.config.allocation_mode === 'mcr_q' && <p className="field-help">Default: 3 Monte Carlo candidates per slot, as in the reference notebook. More samples mean more Gurobi solves. The seed makes repeated simulations reproducible.</p>}
+            <div className="allocation-legend"><span><i className="legend-activated"/> Moving gold: optical generation</span><span><i className="legend-stored"/> Moving amber: QKP-only use</span><span><i className="legend-idle"/> Muted: available but idle</span></div>
           </div>
           <div className="inspector-subsection-heading"><GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle></div>
           <div className="field-grid">
@@ -744,7 +778,7 @@ export default function App() {
             <Numeric label="Tracking efficiency" value={scenario.config.optical.tracking_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.tracking_efficiency=v)}/>
             <Numeric label="Detection efficiency" value={scenario.config.optical.detector_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.detector_efficiency=v)}/>
           </div>
-          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. The allocator is still a demo heuristic. Unchanged physical evaluations are cached.</p>
+          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. SCAR-Q uses greedy path selection; MCR-Q uses random path sampling evaluated by Gurobi. Gurobi solves each candidate allocation LP. Unchanged physical evaluations are cached.</p>
         </div>
         <div className="inspector-section last"><GroupTitle>API ENGINE</GroupTitle>
           <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong><small>{backend==='online'?'Connection healthy':backend==='checking'?'Checking connection':'Not connected'}</small></div><span className="api-tag">{backend.toUpperCase()}</span></div>

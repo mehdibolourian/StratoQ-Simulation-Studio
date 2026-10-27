@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { geoCircle } from '../lib/geo';
+import { resolveVisualLinks } from '../lib/topology.js';
 
 setWorkerUrl(workerUrl);
 const emptyFC = () => ({ type: 'FeatureCollection', features: [] });
@@ -37,7 +38,7 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
       map.addLayer({id: 'weather-fills', type: 'fill', source: 'weather', paint: {'fill-color': ['get', 'color'], 'fill-opacity': 0.18}});
       map.addLayer({id: 'weather-edges', type: 'line', source: 'weather', paint: {'line-color': ['get', 'color'], 'line-width': 1.8}});
       map.addSource('links', {type: 'geojson', data: emptyFC()});
-      map.addLayer({id: 'link-lines', type: 'line', source: 'links', paint: {'line-color': ['get', 'color'], 'line-width': ['case', ['get','selected'], 5, 2.6], 'line-opacity': 0.85}});
+      map.addLayer({id: 'link-lines', type: 'line', source: 'links', paint: {'line-color': ['get', 'color'], 'line-width': ['case', ['get','selected'], 5, ['get','activated'], 4.2, ['get','allocated'], 3.2, 1.8], 'line-opacity': 0.85}});
       // MapLibre weather polygon is draggable (not only its small marker).
       // Keep drag state outside React so layer updates cannot interrupt it.
       let weatherDrag = null;
@@ -87,11 +88,11 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
     function updateLayers() {
       const gsById = Object.fromEntries(scenario.ground_stations.map(x => [x.id, x]));
       const hapById = Object.fromEntries(scenario.balloons.map(x => [x.id, x]));
-      const links = (topologyLinks || frame?.links || []).map(l => {
+      const links = resolveVisualLinks(topologyLinks, frame).map(l => {
         const gs = gsById[l.source], hap = hapById[l.target];
         if (!gs || !hap) return null;
         return {type: 'Feature', geometry: {type: 'LineString', coordinates: [[gs.lon, gs.lat], [hap.lon, hap.lat]]},
-          properties: {id:l.id, selected:l.id===selectedId, color: l.id===selectedId ? '#f8cf91' : (!l.enabled || !l.in_range) ? '#e18485' : l.active ? '#59dccc' : '#516679'}};
+          properties: {id:l.id, selected:l.id===selectedId, activated:!!l.activated, allocated:!!l.allocated, color: l.id===selectedId ? '#f8cf91' : (!l.enabled || !l.in_range) ? '#e18485' : l.activated ? '#f5b934' : l.allocated ? '#dbaa69' : '#516679'}};
       }).filter(Boolean);
       map.getSource('links')?.setData({type:'FeatureCollection', features: links});
       map.getSource('coverage')?.setData({type:'FeatureCollection', features: scenario.balloons.map(coverageFeature)});

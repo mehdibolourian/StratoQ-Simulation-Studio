@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid, Html, Line, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { CENTER, fromWorld, position3D } from '../lib/geo';
+import { resolveVisualLinks } from '../lib/topology.js';
 
 const CYAN = '#56e9dc';
 const GOLD = '#ffd09a';
@@ -366,6 +367,66 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
   </group>;
 }
 
+
+// Animated dashes follow the active algorithm decisions (NOT physical availability).
+// A visible travelling photon is more reliable than animated dashed lines
+// alone (some browsers/drivers don't animate LineMaterial.dashOffset).
+// It is rendered ONLY for the allocator's activated=true result.
+function MovingPhoton({points, phase=0, speed=0.19, haloColor="#ffbf39", coreColor="#fff6c3", radius=0.46}) {
+  const ref = useRef(null);
+  useFrame(({clock}) => {
+    if (!ref.current) return;
+    const f = (clock.elapsedTime * speed + phase) % 1;
+    ref.current.position.set(
+      points[0][0] * (1-f) + points[1][0] * f,
+      points[0][1] * (1-f) + points[1][1] * f,
+      points[0][2] * (1-f) + points[1][2] * f,
+    );
+    ref.current.scale.setScalar(0.92 + 0.16 * Math.sin(clock.elapsedTime * 5.5 + phase * 6));
+  });
+  return <group ref={ref} renderOrder={40}>
+    <mesh renderOrder={40}>
+      <sphereGeometry args={[radius*2.3,12,12]}/>
+      <meshBasicMaterial color={haloColor} transparent opacity={0.23} depthTest={false} depthWrite={false}/>
+    </mesh>
+    <mesh renderOrder={41}>
+      <sphereGeometry args={[radius,14,14]}/>
+      <meshBasicMaterial color={coreColor} depthTest={false} depthWrite={false}/>
+    </mesh>
+  </group>;
+}
+
+function ActivationPulse({points}) {
+  const line = useRef(null);
+  useFrame(({clock}) => {
+    const material = line.current?.material;
+    if (material) {
+      material.dashOffset = -clock.elapsedTime * 1.3;
+      material.opacity = 0.76 + 0.22 * Math.sin(clock.elapsedTime * 3.8);
+    }
+  });
+  return <>
+    <Line ref={line} points={points} color="#ffed9f" lineWidth={5.2}
+      transparent opacity={0.85} dashed dashSize={1.7} gapSize={1.15} depthWrite={false} />
+    <MovingPhoton points={points} phase={0}/>
+    <MovingPhoton points={points} phase={0.5}/>
+  </>;
+}
+
+// Storage-only links also carry end-to-end keys. Show that transport on the
+// actual GS-to-HAP optical geometry, using amber rather than gold so viewers
+// never mistake already-stored QKP consumption for new photon generation.
+function StoredKeyPulse({points}) {
+  return <>
+    <Line points={points} color="#f6be67" lineWidth={4} transparent opacity={0.94}
+      dashed dashSize={2.1} gapSize={1.2} depthWrite={false}/>
+    <MovingPhoton points={points} phase={0} speed={0.13} radius={0.39}
+      haloColor="#e29b42" coreColor="#ffe6aa" />
+    <MovingPhoton points={points} phase={0.5} speed={0.13} radius={0.39}
+      haloColor="#e29b42" coreColor="#ffe6aa" />
+  </>;
+}
+
 function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode, onPositionChange, autoRotate }) {
   const [dragging, setDragging] = useState(false);
   const orbitRef = useRef();
@@ -388,7 +449,10 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
       control.update();
     }
   });
-  const links = topologyLinks || frame?.links || [];
+  // Always overlay the exact slot's backend flags on the potential geometry.
+  // The old expression `topologyLinks || frame?.links` never considered
+  // frame.links because topologyLinks is always a truthy array.
+  const links = resolveVisualLinks(topologyLinks, frame);
   const qkps = Object.fromEntries((frame?.qkps || []).map(q => [q.node_id, q]));
   const coords = Object.fromEntries([...scenario.ground_stations, ...scenario.balloons].map(n => [n.id, position3D(n)]));
   return <>
@@ -426,6 +490,7 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
       const isSelected = selectedId === link.id;
       const unavailable = !link.enabled || !link.in_range;
       const used = link.used_bps || 0;
+      const linkState = link.activated ? 'fresh' : link.allocated ? 'stored' : 'idle';
       const midpoint = endpoints[0].map((v, i) => (v + endpoints[1][i]) / 2);
       midpoint[1] += 1.4;
       return <group key={link.id}>
@@ -435,8 +500,10 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
           onPointerOver={()=>{document.body.style.cursor='pointer';}}
           onPointerOut={()=>{document.body.style.cursor='auto';}} />
         <Line points={endpoints}
-          color={isSelected ? '#f8cf91' : unavailable ? '#e18485' : link.active ? '#4de5d6' : '#4d8b9a'} lineWidth={isSelected ? 4 : link.active ? 2.5 : 1.5}
-          transparent opacity={isSelected ? 1 : unavailable ? 0.55 : link.active ? 0.88 : 0.45} />
+          color={unavailable ? '#e18485' : link.activated ? '#f5b934' : link.allocated ? '#e2a759' : '#52687b'}
+          lineWidth={link.activated ? 4.3 : link.allocated ? 3.8 : 1.4}
+          transparent opacity={unavailable ? 0.50 : link.activated ? 1 : link.allocated ? 0.92 : 0.28} />
+        {isSelected && <Line points={endpoints} color="#fff1c3" lineWidth={7} transparent opacity={0.21} depthWrite={false} />}
         {/* Tiny single-line rate tag. Full information stays in the link inspector. */}
         {(link.capacity_bps != null || isSelected) && <Html position={midpoint} center distanceFactor={36} style={{pointerEvents:'none'}}>
           <div className={`link-throughput-label compact-link-label ${isSelected ? 'selected' : ''}`}
@@ -444,16 +511,18 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
             {!link.enabled ? 'OFF' : !link.in_range ? 'OOR' : link.capacity_bps == null ? '…' : `${formatRate(cap)} / ${formatRate(used)}`}
           </div>
         </Html>}
-        {link.active && <Line points={endpoints}
-          color="#7cfdf3" lineWidth={5.5} transparent opacity={0.095} />}
+        {link.activated && <><Line points={endpoints} color="#ffcb55" lineWidth={9} transparent opacity={0.18} depthWrite={false} /><ActivationPulse points={endpoints} /></>}
+        {link.allocated && !link.activated && <StoredKeyPulse points={endpoints} />}
+        {linkState !== 'idle' && <Html position={[midpoint[0],midpoint[1]+1.7,midpoint[2]]}
+          center distanceFactor={40} style={{pointerEvents:'none'}}>
+          <span className={`optical-state-tag ${linkState}`}>
+            {link.activated ? 'OPTICAL ON' : 'QKP FLOW'}
+          </span>
+        </Html>}
       </group>;
     })}
-    {frame?.demands?.filter(d=> d.path.length > 0).map(d => {
-      const a = coords[d.source], b = coords[d.target];
-      if (!a || !b) return null;
-      return <Line key={d.id} points={[[a[0], 0.28, a[2]], [0.5*(a[0]+b[0]), 0.28, 0.5*(a[2]+b[2])], [b[0], 0.28, b[2]]]}
-        color="#b0a1ff" lineWidth={1} transparent opacity={0.7} dashed dashSize={1.2} gapSize={1.1} />;
-    })}
+    {/* No direct GS–GS route line: a served demand is carried over two
+        physical GS↔HAP links, which have their own live animation. */}
     {scenario.ground_stations.map(gs => <ModelNode key={gs.id} item={gs} type="ground" selected={selectedId===gs.id}
       dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[gs.id]} />)}
     {scenario.balloons.map(hap => <ModelNode key={hap.id} item={hap} type="balloon" selected={selectedId===hap.id}

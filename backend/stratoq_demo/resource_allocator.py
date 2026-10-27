@@ -1,19 +1,22 @@
-"""Slot-by-slot placeholder resource allocator consuming upstream BB84 capacities.
+"""Slot-by-slot SCAR-Q greedy / MCR-Q Monte Carlo + Gurobi allocation.
 
-Only allocation is illustrative; the optical rate is computed by physical_setup.
-Link key inventories are shared copies at both endpoints, not additive.
+Optical K_MAX comes exclusively from the existing upstream physical channel.
+Link QKP inventories are shared endpoint views, not additive.
 """
 import math
-import random
+import logging
+
+LOGGER = logging.getLogger("uvicorn.error")
 from .models import Scenario, LinkState, DemandState, SimulationFrame, SimulationResult, QKPState
 from .setup import build_links, balloon_weather
 from .physical_setup import create_physical_network
 from .trajectories import scenario_at, horizon_seconds
 from .era5_weather import scenario_era5
+from .allocator_algorithms import select_and_solve_slot, require_gurobi
 
 
 def allocate(scenario: Scenario, progress=None) -> SimulationResult:
-    rng = random.Random(scenario.config.allocator_seed)
+    gp = require_gurobi()  # Fail BEFORE expensive LOWTRAN channel evaluation.
     era5 = scenario_era5(scenario)
     if progress and era5: progress({'stage':'era5-sampling','total':1,'completed':0})
     physical = create_physical_network(scenario, progress=progress)
@@ -37,6 +40,12 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
     }
     buffers = {link["id"]: 0.0 for link in candidates}
     frames: list[SimulationFrame] = []
+    solver_runs = 0
+    gurobi_seconds = 0.
+    successful_slot_solves = 0
+    activated_slot_count = 0
+    slots_without_routes = 0
+    gurobi_version = "unknown"
 
     for slot in range(slots):
         slot_scenario, positions = scenario_at(scenario, slot * duration)
@@ -70,47 +79,54 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
                 current['fog']=int(current['fog'] or wx['fog'])
                 current['rain']=int(current['rain'] or wx['rain']>0.05)
                 current['snow']=int(current['snow'] or wx['snow']>0.05)
-        for link in candidates:
-            lid = link["id"]
-            buffers[lid] = min(max_storage[lid], buffers[lid] + rates[lid] * duration)
-
+        # Reference algorithms: SCAR-Q = one greedy candidate;
+        # MCR-Q = N randomized candidate paths each separately optimized
+        # with Gurobi. Only the best candidate commits its QKP next-state.
+        audit = {}
+        paths, solved = select_and_solve_slot(
+            slot_scenario, rates, buffers, max_storage, duration,
+            scenario.config.allocation_mode,
+            seed=scenario.config.allocator_seed + slot,
+            n_samples=scenario.config.mcr_samples, gp=gp, trace=audit)
+        served, live, stored, activated, buffers, objective_bits = solved
+        # Count real calls that returned from Gurobi's optimize(), not planned calls.
+        solver_runs += audit['candidate_solves']
+        gurobi_seconds += audit['gurobi_runtime_seconds']
+        successful_slot_solves += int(audit['solver_status'] == 'OPTIMAL')
+        activated_slot_count += int(bool(activated))
+        slots_without_routes += int(not paths)
+        gurobi_version = audit['gurobi_version']
+        if slot < 3 or slot == slots-1 or slot % max(1,slots//10) == 0:
+            LOGGER.info('[StratoQ solver] slot=%s/%s algorithm=%s Gurobi=%s models=%s paths=%s active_links=%s '
+                        'positive_KMAX=%s served_bits=%.3f solver_seconds=%.6f',
+                        slot+1, slots, scenario.config.allocation_mode, audit['solver_status'],
+                        audit['candidate_solves'], audit['selected_paths'], len(activated),
+                        audit['positive_capacity_links'], objective_bits, audit['gurobi_runtime_seconds'])
+        path_by_demand = {p.demand_id:p for p in paths}
+        link_use = {link['id']:0. for link in candidates}
+        for p in paths:
+            if served.get(p.demand_id,0.) > 1e-7:
+                link_use[p.uplink_id] += served[p.demand_id]
+                link_use[p.downlink_id] += served[p.demand_id]
         demand_states = []
-        link_use = {link["id"]: 0.0 for link in candidates}
-        # Simple greedy allocator: a deterministic test seam for a future ILP / heuristic.
-        for demand in scenario.demands:
-            options = []
-            for balloon in scenario.balloons:
-                l1 = f"{demand.source}:{balloon.id}"
-                l2 = f"{demand.target}:{balloon.id}"
-                if l1 in buffers and l2 in buffers and rates[l1] > 0 and rates[l2] > 0:
-                    options.append((min(buffers[l1], buffers[l2]) / duration, l1, l2, balloon.id))
-            if options:
-                # Explicitly a placeholder policy, not StratoQ's optimizer.
-                # Random mode is seed-reproducible and selects among feasible
-                # GS-HAP-GS paths. Greedy mode favors the largest inventory.
-                if scenario.config.allocation_mode == 'random':
-                    possible_bps, l1, l2, balloon_id = rng.choice(options)
-                else:
-                    possible_bps, l1, l2, balloon_id = max(options)
-                served_bps = min(demand.rate_bps, possible_bps)
-                used = served_bps * duration
-                link_use[l1] += served_bps
-                link_use[l2] += served_bps
-                buffers[l1] = max(0., buffers[l1] - used)
-                buffers[l2] = max(0., buffers[l2] - used)
-                path = [demand.source, balloon_id, demand.target] if served_bps > 0 else []
-            else:
-                served_bps, path = 0., []
+        for d in scenario.demands:
+            achieved = max(0., served.get(d.id,0.))
+            selected_path = path_by_demand.get(d.id)
             demand_states.append(DemandState(
-                id=demand.id, source=demand.source, target=demand.target,
-                requested_bps=demand.rate_bps, served_bps=round(served_bps, 2),
-                path=path, status="served" if served_bps >= demand.rate_bps - 1e-6
-                else "partial" if served_bps > 0 else "blocked"))
+                id=d.id, source=d.source, target=d.target,
+                requested_bps=d.rate_bps, served_bps=round(achieved, 2),
+                path=[d.source, selected_path.hap_id, d.target]
+                     if achieved > 1e-7 and selected_path else [],
+                status='served' if achieved >= d.rate_bps-1e-6
+                else 'partial' if achieved > 1e-7 else 'blocked'))
 
         link_states = [LinkState(
-            **link, capacity_bps=round(rates[link["id"]], 2),
-            stored_bits=round(buffers[link["id"]], 1),
-            used_bps=round(link_use[link["id"]], 2), active=rates[link["id"]] > 0.01
+            **link, capacity_bps=round(rates[link['id']],2),
+            stored_bits=round(buffers[link['id']],1),
+            used_bps=round(link_use[link['id']],2),
+            active=rates[link['id']] > 0.01,
+            activated=link['id'] in activated,
+            allocated=link_use[link['id']] > 1e-7,
         ) for link in candidates]
         # Aggregate the endpoint copies of the shared per-link key inventories.
         # HAP/GS totals are logical endpoint views (not additive physical bits).
@@ -130,7 +146,9 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
             historical_weather_metadata=historical_metadata,
             links=link_states, demands=demand_states, qkps=qkp_states,
             stored_bits_total=round(sum(buffers.values()), 1),
-            served_bps_total=round(sum(d.served_bps for d in demand_states), 2)))
+            served_bps_total=round(sum(d.served_bps for d in demand_states), 2),
+            optimizer=audit))
+        if progress: progress({"stage":"allocation", "total":slots,"completed":slot+1})
 
     average_served = sum(f.served_bps_total for f in frames) / len(frames)
     average_requested = sum(d.rate_bps for d in scenario.demands)
@@ -142,4 +160,14 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
         "final_stored_bits": frames[-1].stored_bits_total,
         "physical_evaluations": physical.rate_stats["computed"],
         "cached_evaluations": physical.rate_stats["cached"],
+        "algorithm": scenario.config.allocation_mode,
+        "mcr_samples": scenario.config.mcr_samples if scenario.config.allocation_mode == 'mcr_q' else 0,
+        "allocator_seed": scenario.config.allocator_seed,
+        "gurobi_slot_solves": solver_runs,
+        "gurobi_optimized_models": solver_runs,
+        "gurobi_runtime_seconds": round(gurobi_seconds, 6),
+        "gurobi_version": gurobi_version,
+        "optimal_slots": successful_slot_solves,
+        "slots_with_activated_links": activated_slot_count,
+        "slots_without_selected_paths": slots_without_routes,
     })

@@ -86,12 +86,22 @@ class OpticalParameters(BaseModel):
 
 
 class SimulationConfig(BaseModel):
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_allocator(cls, value):
+        """Accept old exported experiments without silently retaining placeholders."""
+        if isinstance(value, dict) and value.get('allocation_mode') in ('random','greedy'):
+            value = value.copy()
+            value['allocation_mode'] = 'mcr_q' if value['allocation_mode']=='random' else 'scar_q'
+        return value
+
     slots: int = Field(default=24, ge=1, le=1500)
     slot_seconds: int = Field(default=300, ge=1, le=86400)
     base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)  # legacy input, ignored by physical engine
     optical: OpticalParameters = Field(default_factory=OpticalParameters)
-    allocation_mode: Literal["random", "greedy"] = "random"
+    allocation_mode: Literal["scar_q", "mcr_q"] = "scar_q"
     allocator_seed: int = Field(default=42, ge=0, le=2**31-1)
+    mcr_samples: int = Field(default=3, ge=1, le=100)  # Notebook mcr_policy default n_samples=3
     channel_workers: int = Field(default=10, ge=1, le=24)
     # Historical ERA5 (UTC) is optional: manual weather always remains additive.
     weather_source: Literal["manual", "era5"] = "manual"
@@ -151,7 +161,9 @@ class LinkState(BaseModel):
     capacity_limit_bps: float | None = None
     stored_bits: float
     used_bps: float = 0.0
-    active: bool
+    active: bool  # Physical link is available (K_MAX > 0).
+    activated: bool = False  # Algorithm enabled optical key generation this slot.
+    allocated: bool = False  # Allocator used this link (fresh or QKP).
     enabled: bool = True
     in_range: bool = True
 
@@ -185,9 +197,10 @@ class SimulationFrame(BaseModel):
     qkps: list[QKPState] = Field(default_factory=list)
     stored_bits_total: float
     served_bps_total: float
+    optimizer: dict[str, float | int | str] = Field(default_factory=dict)
 
 
 class SimulationResult(BaseModel):
     engine: str = "balloon-qnet-theoretical"
     frames: list[SimulationFrame]
-    summary: dict[str, float | int]
+    summary: dict[str, float | int | str]
