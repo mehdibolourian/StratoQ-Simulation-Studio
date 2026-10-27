@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Activity, ArrowDownToLine, ArrowRight, Box, Check, ChevronDown, CircleHelp,
+  Activity, ArrowDownToLine, ArrowUpFromLine, ArrowRight, Box, Check, ChevronDown, CircleHelp,
   Cloud, CloudRain, CalendarDays, Crosshair, Gauge, Layers3, Map, Maximize2, MousePointer2,
   Pause, Play, Plus, RadioTower, RefreshCcw, Rotate3D, SatelliteDish,
-  Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X,
+  Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, GripVertical, Pencil, Copy,
 } from 'lucide-react';
 import Network3D from './components/Network3D.jsx';
 import GeoMap from './components/GeoMap.jsx';
@@ -11,7 +11,7 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
-const STUDIO_VERSION = '1.0.2';
+const STUDIO_VERSION = '1.0.5';
 const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
@@ -49,9 +49,45 @@ function downloadJSON(filename, data) {
   a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 200);
 }
 
+const WORKSPACE_KEY = 'stratoq.workspace.v104';
+const makeExperiment = (scenario, name='Experiment 1') => ({
+  id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random(),
+  name, scenario: clone(scenario), selectedId: null, result: null, dirty: true, frameIndex: 0,
+});
+function readWorkspace() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(WORKSPACE_KEY) || 'null');
+    if (stored?.experiments?.length && stored.experiments.every(e => e.scenario?.config && Array.isArray(e.scenario.ground_stations))) {
+      return {experiments:stored.experiments.map(e => ({...e, result:null, dirty:true})),
+        activeId:stored.experiments.some(e=>e.id===stored.activeId) ? stored.activeId : stored.experiments[0].id};
+    }
+  }catch(_){}
+  const first=makeExperiment(INITIAL_SCENARIO,'Experiment 1'); first.selectedId='hap-1';
+  return {experiments:[first],activeId:first.id};
+}
+function isScenario(obj) {
+  return obj && typeof obj==='object' && !Array.isArray(obj) &&
+    Array.isArray(obj.ground_stations) && Array.isArray(obj.balloons) &&
+    Array.isArray(obj.demands) && Array.isArray(obj.weather_regions) &&
+    obj.config && typeof obj.config==='object';
+}
 export default function App() {
-  const [scenario, setScenario] = useState(() => clone(INITIAL_SCENARIO));
-  const [selectedId, setSelectedId] = useState('hap-1');
+  const [initialWorkspace] = useState(readWorkspace);
+  const [experiments, setExperiments] = useState(initialWorkspace.experiments);
+  const [activeId, setActiveId] = useState(initialWorkspace.activeId);
+  const activeExperiment = experiments.find(e=>e.id===activeId) || experiments[0];
+  const [scenario, setScenario] = useState(() => clone(initialWorkspace.experiments.find(e=>e.id===initialWorkspace.activeId).scenario));
+  const [selectedId, setSelectedId] = useState(() => initialWorkspace.experiments.find(e=>e.id===initialWorkspace.activeId).selectedId);
+  const [leftWidth, setLeftWidth] = useState(() => Number(localStorage.getItem('stratoq.left.width')) || 263);
+  const [rightWidth, setRightWidth] = useState(() => Number(localStorage.getItem('stratoq.right.width')) || 332);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [rightOpen, setRightOpen] = useState(true);
+  const importRef=useRef(null);
+  const workspaceRef=useRef(null);
+  const resizeRef=useRef(null);
+  const latestSnapshot=useRef(null);
+  const latestExperiments=useRef(experiments);
+  const activeIdRef=useRef(activeId);
   const [mode, setMode] = useState('3d');
   const [dragMode, setDragMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
@@ -73,6 +109,90 @@ export default function App() {
   const [era5Preview, setEra5Preview] = useState([]);
   const [era5Meta, setEra5Meta] = useState(null);
   const requestId = useRef(0);
+  const weatherRequestId = useRef(0);
+  latestSnapshot.current = {scenario, selectedId, result, dirty, frameIndex};
+  latestExperiments.current = experiments;
+  activeIdRef.current = activeId;
+  useEffect(() => {
+    // Persist editable scenarios only. Simulation results can be huge and are not durable.
+    try {
+      const snapshot=latestSnapshot.current;
+      const saved=latestExperiments.current.map(e=>e.id===activeIdRef.current ?
+        {...e, scenario:snapshot.scenario, selectedId:snapshot.selectedId, result:null, dirty:true} :
+        {...e, result:null, dirty:true});
+      localStorage.setItem(WORKSPACE_KEY, JSON.stringify({experiments:saved,activeId:activeIdRef.current}));
+    } catch (err) {console.warn('Workspace auto-save unavailable:',err);}
+  }, [scenario, selectedId, experiments, activeId]);
+  useEffect(()=>{try {localStorage.setItem('stratoq.left.width',String(leftWidth));localStorage.setItem('stratoq.right.width',String(rightWidth));}catch(_){}},[leftWidth,rightWidth]);
+  useEffect(()=>{
+    const move=e=>{
+      const direction=resizeRef.current;
+      if (!direction) return;
+      if (direction==='left') setLeftWidth(Math.max(210,Math.min(500,e.clientX)));
+      if (direction==='right') setRightWidth(Math.max(260,Math.min(540,window.innerWidth-e.clientX)));
+    };
+    const stop=()=>{resizeRef.current=null;document.body.style.cursor='';document.body.style.userSelect='';};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',stop);
+    return ()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',stop);};
+  },[]);
+  function beginResize(side,e) {e.preventDefault();resizeRef.current=side;document.body.style.cursor='col-resize';document.body.style.userSelect='none';}
+  function saveCurrent() {
+    const snap=latestSnapshot.current;
+    return latestExperiments.current.map(e=>e.id===activeIdRef.current ? {...e,...snap} : e);
+  }
+  function loadExperiment(exp) {
+    ++requestId.current; ++weatherRequestId.current;
+    setScenario(clone(exp.scenario));setSelectedId(exp.selectedId || null);
+    setResult(exp.result || null);setDirty(exp.dirty ?? true);setFrameIndex(exp.frameIndex || 0);
+    setRunning(false);setPlaying(false);setPhysicsProgress(null);setError('');
+    setEra5Preview([]);setEra5Meta(null);setEra5Job(null);setEra5Loading(false);
+    setSceneKey(k=>k+1);
+  }
+  function changeExperiment(id) {
+    if(id===activeIdRef.current) return;
+    const saved=saveCurrent();const next=saved.find(e=>e.id===id);if(!next)return;
+    setExperiments(saved);setActiveId(id);loadExperiment(next);
+  }
+  function createExperiment() {
+    const saved=saveCurrent();
+    const next=makeExperiment(INITIAL_SCENARIO,`Experiment ${saved.length+1}`);
+    next.selectedId='hap-1';setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+  }
+  function duplicateExperiment() {
+    const saved=saveCurrent();const current=saved.find(e=>e.id===activeIdRef.current);
+    const next={...makeExperiment(current.scenario,`${current.name} copy`),selectedId:current.selectedId};
+    setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+  }
+  function renameExperiment(id) {
+    const current=latestExperiments.current.find(e=>e.id===id);if(!current)return;
+    const name=window.prompt('Experiment name',current.name)?.trim();
+    if(name) setExperiments(old=>old.map(e=>e.id===id?{...e,name:name.slice(0,64)}:e));
+  }
+  function closeExperiment(id) {
+    const saved=saveCurrent();if(saved.length===1){setError('Keep at least one experiment open.');return;}
+    const remaining=saved.filter(e=>e.id!==id);setExperiments(remaining);
+    if(id===activeIdRef.current){setActiveId(remaining[0].id);loadExperiment(remaining[0]);}
+  }
+  function exportWorkspace() {
+    const saved=saveCurrent().map(({result,dirty,frameIndex,...e})=>e);
+    downloadJSON('stratoq-workspace.json',{format:'stratoq-workspace',version:1,activeId:activeIdRef.current,experiments:saved});
+  }
+  async function importFile(file) {
+    if(!file)return;
+    try {
+      const payload=JSON.parse(await file.text());
+      if(payload?.format==='stratoq-workspace' && Array.isArray(payload.experiments) && payload.experiments.length &&
+        payload.experiments.every(e=>isScenario(e.scenario))) {
+        const restored=payload.experiments.map(e=>({...makeExperiment(e.scenario,e.name || 'Experiment'),id:e.id || makeExperiment(e.scenario).id, selectedId:e.selectedId || null}));
+        const chosen=restored.find(e=>e.id===payload.activeId)||restored[0];
+        setExperiments(restored);setActiveId(chosen.id);loadExperiment(chosen);
+      } else if(isScenario(payload)) {
+        const saved=saveCurrent();const next=makeExperiment(payload,file.name.replace(/\.json$/i,'') || 'Imported experiment');
+        setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+      } else throw new Error('Not a StratoQ experiment or workspace JSON file.');
+    }catch(e){setError(`Import failed: ${e.message}`);}
+  }
+
   useEffect(() => {
     if (!era5Loading) return;
     const started = Date.now();
@@ -201,6 +321,7 @@ export default function App() {
     setEra5Meta(meta);setFrameIndex(0);
   }
   async function retrieveEra5() {
+    const thisWeatherRequest=++weatherRequestId.current;
     if(!era5Date){setError('Select a historical UTC date first.');return;}
     setEra5Loading(true);setEra5Job({stage:'Connecting to Open-Meteo…',status:'running'});setError('');
     try {
@@ -208,21 +329,27 @@ export default function App() {
         body:JSON.stringify({date_utc:era5Date,scenario})});
       const data=await response.json();
       if(!response.ok)throw new Error(data.detail||`HTTP ${response.status}`);
+      if(thisWeatherRequest!==weatherRequestId.current)return;
       let state=data;
-      while(state.status==='queued'||state.status==='running') {
+      while(thisWeatherRequest===weatherRequestId.current && (state.status==='queued'||state.status==='running')) {
         await new Promise(resolve=>setTimeout(resolve,1700));
         const progress=await fetch(`/api/open-meteo/jobs/${data.id}`,{cache:'no-store'});
         if(!progress.ok)throw new Error(progress.status === 404
           ? 'The ERA5 download job disappeared (backend restarted). Restart FastAPI and retry; completed Open-Meteo batches will be reused.'
           : `ERA5 status HTTP ${progress.status}`);
-        state=await progress.json();setEra5Job(state);
+        state=await progress.json();
+        if(thisWeatherRequest!==weatherRequestId.current)return;
+        setEra5Job(state);
       }
+      if(thisWeatherRequest!==weatherRequestId.current)return;
       if(state.status!=='complete')throw new Error(state.error||'ERA5 retrieval failed');
       activateEra5(state.dataset);
-    }catch(e){setError(`ERA5: ${e.message}`);}finally{setEra5Loading(false);}
+    }catch(e){if(thisWeatherRequest===weatherRequestId.current)setError(`ERA5: ${e.message}`);}
+    finally{if(thisWeatherRequest===weatherRequestId.current)setEra5Loading(false);}
   }
   async function uploadERA5(file) {
     if(!file)return;
+    const thisWeatherRequest=++weatherRequestId.current;
     if(!era5Date){setError('Choose a UTC date before uploading ERA5 NetCDF.');return;}
     setEra5Loading(true);setError('');setEra5Job({stage:'Parsing local ERA5…',status:'running'});
     try {
@@ -230,8 +357,10 @@ export default function App() {
       const response=await fetch('/api/era5/upload',{method:'POST',body:form});
       const data=await response.json();
       if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail));
+      if(thisWeatherRequest!==weatherRequestId.current)return;
       activateEra5(data);setEra5Job({status:'complete',stage:'ready',dataset:data});
-    }catch(e){setError(`ERA5 import: ${e.message}`);}finally{setEra5Loading(false);}
+    }catch(e){if(thisWeatherRequest===weatherRequestId.current)setError(`ERA5 import: ${e.message}`);}
+    finally{if(thisWeatherRequest===weatherRequestId.current)setEra5Loading(false);}
   }
   useEffect(()=>{
     const datasetId=scenario.config.era5_dataset_id;
@@ -311,20 +440,29 @@ export default function App() {
   const totalFrames=(!dirty ? result?.frames.length : scenario.config.slots)||scenario.config.slots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
-  return <div className="app-shell">
-    <aside className="left-panel">
+  return <div className="app-shell" data-ui-build="1.0.7" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+    <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
+    <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
+    <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
+      <div className="panel-resizer resizer-left" onPointerDown={e=>beginResize("left",e)} title="Drag to resize left panel"/>
       <div className="brand-wrap">
-        <div className="brand-symbol"><Layers3 size={23} strokeWidth={2.1}/></div>
-        <div><div className="brand-title">strato<span>Q</span><sup>STUDIO</sup></div><div className="brand-sub">QUANTUM NETWORK LAB</div></div>
+        <div className="brand-symbol"><img className="brand-atom-mark" src="/favicon.svg?v=109" alt="StratoQ three-orbit atom emblem" /></div>
+        <div className="brand-wordmark"><div className="brand-title">Strato<span>Q</span></div><div className="brand-product">SIMULATION STUDIO</div></div>
       </div>
       <div className="side-scroll">
-        <div className="section-pad">
-          <div className="eyebrow">WORKSPACE <span className="eyebrow-hint">01 / EXPERIMENT</span></div>
-          <div className="project-card">
-            <div className="project-name"><span className="project-status" /> Northern Ontario <ChevronDown size={15}/></div>
-            <p>HAP-assisted QKD sandbox</p>
-            <span className="project-id">LOCAL SCENARIO <span>·</span> DEMO 001</span>
+        <div className="section-pad workspace-section">
+          <div className="eyebrow">WORKSPACE <span className="eyebrow-hint">{experiments.length} EXPERIMENT{experiments.length!==1?'S':''}</span></div>
+          <div className="workspace-current"><span className="project-status"/><strong title={activeExperiment?.name}>{activeExperiment?.name}</strong>
+            <button className="workspace-rename" onClick={()=>renameExperiment(activeId)} title="Rename experiment" aria-label="Rename experiment"><Pencil size={13}/></button></div>
+          <div className="workspace-actions"><button onClick={createExperiment}><Plus size={13}/> New</button>
+            <button onClick={duplicateExperiment} title="Duplicate current experiment"><Copy size={13}/> Duplicate</button></div>
+          <div className="workspace-tabs" role="tablist" aria-label="Experiments">
+            {experiments.map(e=><div className={`workspace-tab ${e.id===activeId?'active':''}`} key={e.id}>
+              <button role="tab" aria-selected={e.id===activeId} onClick={()=>changeExperiment(e.id)} title={e.name}>{e.name}</button>
+              <button className="tab-close" aria-label={`Close ${e.name}`} onClick={()=>closeExperiment(e.id)}><X size={12}/></button>
+            </div>)}
           </div>
+          <p className="workspace-note">Experiments auto-save locally in this browser. Export a workspace file for reliable backup.</p>
         </div>
         <div className="side-divider"/>
         <section className="section-pad">
@@ -401,12 +539,13 @@ export default function App() {
 
     <main className="main-panel">
       <header className="topbar">
-        <div className="breadcrumb"><span>Projects</span><span className="chevron">/</span><strong>Northern Ontario</strong><span className="chevron">/</span><span>Network editor</span></div>
+        <div className="topbar-identity"><button className="panel-toggle" onClick={()=>setLeftOpen(v=>!v)} title={leftOpen?'Collapse workspace':'Expand workspace'}>{leftOpen?<PanelLeftClose size={18}/>:<PanelLeftOpen size={18}/>}</button><span className="topbar-current">{activeExperiment?.name}</span></div>
         <div className="topbar-right">
-          <Chip accent="demo">BALLOON_QNET THEORY · UI {STUDIO_VERSION}</Chip>
-          <span className="top-separator"/>
-          <button className="header-text-button" onClick={()=>downloadJSON('stratoq-scenario.json',scenario)}><ArrowDownToLine size={16}/> Export scenario</button>
-          <button className="avatar" title="Local user">SQ</button>
+          <Chip accent="demo">STRATOQ · {STUDIO_VERSION} · UI 1.0.7</Chip>
+          <button className="header-text-button" onClick={()=>downloadJSON('stratoq-experiment.json',scenario)}><ArrowDownToLine size={15}/> Export experiment</button>
+          <button className="header-text-button" onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={15}/> Import</button>
+          <button className="header-text-button workspace-export" onClick={exportWorkspace}><ArrowDownToLine size={15}/> Export workspace</button>
+          <button className="panel-toggle" onClick={()=>setRightOpen(v=>!v)} title={rightOpen?'Collapse inspector':'Expand inspector'}>{rightOpen?<PanelRightClose size={18}/>:<PanelRightOpen size={18}/>}</button>
         </div>
       </header>
       <div className="stage-shell">
@@ -471,9 +610,10 @@ export default function App() {
       </div>
     </main>
 
-    <aside className="right-panel">
+    <aside className={`right-panel ${rightOpen?"":"is-collapsed"}`}>
+      <div className="panel-resizer resizer-right" onPointerDown={e=>beginResize("right",e)} title="Drag to resize inspector"/>
       <div className="inspector-top"><div><span className="tiny-overline">CONTROL CENTER</span><h2>Inspector <SlidersHorizontal size={17}/></h2></div>
-        <IconButton icon={Settings2} label="Export simulation results" onClick={()=>result&&downloadJSON('stratoq-results.json',result)} disabled={!result}/></div>
+        <IconButton icon={ArrowDownToLine} label="Export simulation results" onClick={()=>result&&downloadJSON('stratoq-results.json',result)} disabled={!result}/></div>
       {selectedType==='weather' && selected && <div className="weather-quick-controls">
         <div className="weather-quick-heading"><strong>WEATHER TYPE</strong><span>Drag zone directly to move</span></div>
         <div className="weather-type-options" role="group" aria-label="Weather effect">
@@ -586,7 +726,7 @@ export default function App() {
             </label>
             <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=v)}/>
           </div>
-          <GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle>
+          <div className="inspector-subsection-heading"><GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle></div>
           <div className="field-grid">
             <Numeric label="Wavelength" value={scenario.config.optical.wavelength_nm} unit="nm" min={300} onChange={v=>patchScenario(s=>s.config.optical.wavelength_nm=v)}/>
             <Numeric label="Beam waist" value={scenario.config.optical.beam_waist_m} unit="m" min={0.001} onChange={v=>patchScenario(s=>s.config.optical.beam_waist_m=v)}/>
@@ -609,10 +749,10 @@ export default function App() {
         <div className="inspector-section last"><GroupTitle>API ENGINE</GroupTitle>
           <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong><small>{backend==='online'?'Connection healthy':backend==='checking'?'Checking connection':'Not connected'}</small></div><span className="api-tag">{backend.toUpperCase()}</span></div>
           {physicsStatus && <p className="field-help">Original channel: {physicsStatus.channel_import_ok?'import OK':'import failed'} · LOWTRAN native: {physicsStatus.native_lowtran_present?'installed':'will build on first run / requires build tools'}</p>}
-          <button className="secondary-button" onClick={()=>downloadJSON('stratoq-scenario.json',scenario)}><ArrowDownToLine size={15}/> Download scenario JSON</button>
+          <button className="secondary-button" onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={15}/> Import experiment / workspace JSON</button>
         </div>
       </div>
-      <div className="right-footer"><CircleHelp size={15}/><span>v0.8 · balloon_qnet upstream channel · demo allocator</span></div>
+      <div className="right-footer"><div className="waterloo-credit"><a className="waterloo-logo-link" href="https://uwaterloo.ca/" target="_blank" rel="noreferrer" aria-label="University of Waterloo"><img className="waterloo-logo-full" src="https://uwaterloo.ca/brand/sites/ca.brand/files/universityofwaterloo_logo_horiz_rev.png" alt="University of Waterloo" loading="lazy" /></a><span>Developed at the <a className="lab-link" href="https://rboutaba-cs.github.io/watqkd/" target="_blank" rel="noreferrer">Networks Lab</a><small>University of Waterloo</small></span></div></div>
     </aside>
   </div>;
 }

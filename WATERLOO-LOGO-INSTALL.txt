@@ -1,0 +1,23 @@
+StratoQ Simulation Studio — Full Waterloo Logo Patch
+
+Changes only:
+- frontend/src/App.jsx: remove the waterloo-shield-crop markup; use the exact
+  image URL supplied by the user, with class waterloo-logo-full.
+- frontend/src/styles.css: remove old shield-only clipping rules; display
+  the entire horizontal logo at 190px wide, centered above the credit.
+
+Installation from your project root:
+    cd /Users/mehdi/Files/stratoq-studio
+    unzip -o ~/Downloads/stratoq-studio-waterloo-full-logo-v108-patch.zip
+    cd frontend
+    npm run dev -- --force
+
+Refresh the exact Vite address in Chrome with Cmd + Shift + R.
+Check installed markup:
+    grep -n 'waterloo-logo-full' src/App.jsx
+    grep -n 'waterloo-shield-crop' src/App.jsx
+The first must find one line; the second must find nothing.
+
+This patch is based on the provided v1.0.7 frontend. If you made other
+local edits to App.jsx or styles.css after that, back them up first.
+The logo is loaded remotely from the university, not bundled.

@@ -60,4 +60,4 @@ def test_weather_reduces_demo_link_rate():
 def test_api_build_number():
     response=TestClient(app).get('/api/health')
     assert response.status_code == 200
-    assert response.json()['version']=='1.0.3'
+    assert response.json()['version']=='1.0.5'

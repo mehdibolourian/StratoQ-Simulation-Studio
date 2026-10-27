@@ -1,0 +1,1 @@
+Fixes missing top-left image by including frontend/public/favicon.svg and referencing the same image from App.jsx and index.html. Based on v1.0.8 full Waterloo logo patch. Run ./verify-stratoq-logo.sh after extraction.
