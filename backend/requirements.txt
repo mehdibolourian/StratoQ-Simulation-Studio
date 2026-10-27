@@ -15,3 +15,8 @@ pandas>=1.5,<3
 matplotlib>=3.6,<4
 xarray>=2023.1
 # Python >=3.12 uses Meson with NumPy f2py: pip install meson meson-python ninja
+
+# Open-Meteo historical API uses the Python standard-library urllib (no API key).
+# cdsapi is optional for older standalone scripts; no longer used by the Studio UI.
+# ERA5 CDS NetCDF may be NetCDF4/HDF5; scipy backend supports classic NetCDF.
+netCDF4>=1.6,<2

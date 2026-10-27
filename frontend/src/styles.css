@@ -101,3 +101,28 @@
 .weather-intensity-control>strong{font-size:11px;color:#d4eee9}
 .weather-intensity-control .field-grid{grid-template-columns:1fr}
 .weather-intensity-control .field-help{margin:0;color:#91aab9;line-height:1.5;font-size:10px}
+
+/* v1.0 Historical ERA5 controls, intentionally consistent with existing dark UI */
+.era5-panel{display:flex;flex-direction:column;gap:10px}
+.era5-panel .group-title{display:flex;gap:7px;align-items:center}
+.era5-switch{display:flex;align-items:center;gap:9px;color:#ddf4ec;font-size:11px;font-weight:600;cursor:pointer}
+.era5-switch input{accent-color:#73dec6;width:15px;height:15px}
+.era5-date-label{display:flex;align-items:center;justify-content:space-between;gap:7px;color:#a6bdc8;font-size:11px}
+.era5-date-label input{min-width:0;max-width:155px;background:#142c3b;color:#e0f5f3;padding:7px;border:1px solid #456171;border-radius:6px;color-scheme:dark;font-size:11px}
+.era5-load{display:flex;gap:8px;justify-content:center;align-items:center;width:100%;height:34px;padding:7px;border:1px solid #4c8c8a;border-radius:7px;background:#225254;color:#d5fff4;font-size:11px;font-weight:650;cursor:pointer}
+.era5-load:hover{background:#2e6667}.era5-load:disabled{opacity:.5;cursor:not-allowed}
+.era5-import{position:relative;display:block;text-align:center;border:1px dashed #526576;border-radius:7px;padding:8px 5px;color:#bed4e0;font-size:10px;cursor:pointer}
+.era5-import input{display:none}
+.era5-help{margin:0;color:#819dab;font-size:10px;line-height:1.5}
+.era5-job-stage{color:#eacb9b;font-size:10px;line-height:1.4}.era5-loaded{color:#9ee2cc;font-size:10px;line-height:1.4}
+
+/* v1.0.1 CDS transfer diagnostics: completed steps vs indeterminate active step */
+.era5-progress{display:flex;flex-direction:column;gap:6px;min-width:0}
+.era5-progress-label{display:flex;justify-content:space-between;gap:8px;color:#eacb9b;font-size:10px;line-height:1.35}
+.era5-progress-label small:first-child{flex:1;min-width:0;overflow-wrap:anywhere}
+.era5-progress-track{height:7px;position:relative;overflow:hidden;border-radius:5px;background:#172f3e;border:1px solid #2f5a60}
+.era5-progress-track>div{height:100%;background:#78d7c1;transition:width .3s ease}
+.era5-progress-active{position:absolute;top:0;bottom:0;width:20%;background:linear-gradient(90deg,transparent,#abffec77,transparent);animation:era5-slide 1.8s linear infinite}
+@keyframes era5-slide{from{left:-20%}to{left:100%}}
+.era5-progress-caption{color:#b6e5db;font-size:10px}
+.era5-progress-note{color:#7d98a5;font-size:9px;line-height:1.4}

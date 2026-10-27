@@ -1,16 +1,18 @@
-"""Development API: uvicorn main:app --reload --port 8000"""
-from fastapi import FastAPI, UploadFile, File, HTTPException
+"""ERA5 via Open-Meteo API: uvicorn main:app --port 8000 (one worker)."""
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from stratoq_demo.models import Scenario, SimulationResult
 from stratoq_demo.setup import default_scenario
 from stratoq_demo.stratoq_adapter import simulate
 from stratoq_demo.trajectories import register
-from stratoq_demo import jobs
+from stratoq_demo import jobs, open_meteo_jobs as era5_jobs
+from stratoq_demo.era5_weather import register_bytes, get_cube, roi_from_scenario
 from pathlib import Path
+from pydantic import BaseModel
 import sysconfig
 import importlib.util
 
-app = FastAPI(title="StratoQ Studio API", version="0.9.0")
+app = FastAPI(title="StratoQ Studio API", version="1.0.3")
 app.add_middleware(
     CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=False, allow_methods=["GET", "POST"], allow_headers=["*"],
@@ -19,7 +21,7 @@ app.add_middleware(
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "engine": "balloon-qnet-theoretical", "version": "0.9.0"}
+    return {"status": "ok", "engine": "balloon-qnet-theoretical", "version": "1.0.3"}
 
 
 @app.get("/api/scenario/default", response_model=Scenario)
@@ -87,3 +89,51 @@ async def upload_trajectory(file: UploadFile = File(...)):
         return register(file.filename, data)
     except (ValueError, KeyError, EOFError, OSError) as exc:
         raise HTTPException(400, str(exc))
+
+
+class ERA5Request(BaseModel):
+    date_utc: str
+    scenario: Scenario
+
+
+@app.post('/api/era5/jobs', status_code=202)
+@app.post('/api/open-meteo/jobs', status_code=202)
+def load_era5_historical(request: ERA5Request):
+    try:
+        return era5_jobs.launch(request.date_utc,request.scenario)
+    except era5_jobs.ERA5BusyError as exc:
+        raise HTTPException(409, str(exc))
+    except (ValueError, OSError) as exc:
+        raise HTTPException(400,str(exc))
+
+
+@app.get('/api/era5/jobs/{job_id}')
+@app.get('/api/open-meteo/jobs/{job_id}')
+def era5_job_status(job_id: str):
+    info=era5_jobs.status(job_id)
+    if info is None:raise HTTPException(404,'ERA5 request not found; backend may have restarted')
+    return info
+
+
+@app.post('/api/era5/upload')
+async def upload_era5(date_utc: str = Form(...),file: UploadFile = File(...)):
+    if not file.filename.lower().endswith(('.nc','.nc4','.zip')):
+        raise HTTPException(400,'Upload ERA5 NetCDF (.nc) or a CDS NetCDF ZIP (.zip)')
+    contents=await file.read(160*1024*1024+1)
+    try:
+        return register_bytes(contents,date_utc,file.filename)
+    except (ValueError,KeyError,ImportError,OSError,RuntimeError) as exc:
+        raise HTTPException(400,str(exc))
+
+
+@app.get('/api/era5/datasets/{dataset_id}/frame')
+def era5_frame(dataset_id: str,date_utc: str,slot_seconds: int=300,slot: int=0):
+    if slot_seconds<1 or slot_seconds>86400 or slot<0 or slot*slot_seconds>=86400:
+        raise HTTPException(400,'ERA5 frame must be within selected UTC day')
+    try:
+        cube=get_cube(dataset_id,date_utc)
+        frame=cube.frame(slot*slot_seconds,slot_seconds)
+        return {'dataset':cube.metadata(),'slot':slot,'time_seconds':slot*slot_seconds,
+                'regions':cube.regions(frame,limit=75)}
+    except (ValueError,KeyError,OSError) as exc:
+        raise HTTPException(400,str(exc))

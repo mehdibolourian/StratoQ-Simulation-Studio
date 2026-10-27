@@ -9,10 +9,13 @@ from .models import Scenario, LinkState, DemandState, SimulationFrame, Simulatio
 from .setup import build_links, balloon_weather
 from .physical_setup import create_physical_network
 from .trajectories import scenario_at, horizon_seconds
+from .era5_weather import scenario_era5
 
 
 def allocate(scenario: Scenario, progress=None) -> SimulationResult:
     rng = random.Random(scenario.config.allocator_seed)
+    era5 = scenario_era5(scenario)
+    if progress and era5: progress({'stage':'era5-sampling','total':1,'completed':0})
     physical = create_physical_network(scenario, progress=progress)
     candidates = build_links(scenario)
     duration = physical.system.THETA
@@ -48,7 +51,25 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
             link['distance_km'] = physical_sample['distance_km']
             link['elevation_deg'] = physical_sample['elevation_deg']
             link['in_range'] = physical_sample['in_range']
+            link['weather_loss_db'] = physical_sample['weather_loss_db']
+            link['weather_flags'] = physical_sample['weather_flags']
         weather_by_hap = {h.id: balloon_weather(h, slot_scenario) for h in slot_scenario.balloons}
+        historical_regions=[]
+        historical_metadata={}
+        if era5 is not None:
+            weather_frame=era5.frame(slot*duration,duration)
+            historical_regions=era5.regions(weather_frame,limit=75)
+            historical_metadata={'date_utc':era5.day.isoformat(),
+                'source':'ERA5 reanalysis', 'visual_cells_shown':len(historical_regions),
+                'grid_cells':len(era5.lats)*len(era5.lons),
+                'fog':'humidity/low-cloud proxy (not observed fog)',
+                'rain_snow':'ERA5 hourly water-equivalent accumulations'}
+            for hap in slot_scenario.balloons:
+                wx=era5.point(weather_frame,hap.lat,hap.lon)
+                current=weather_by_hap[hap.id]
+                current['fog']=int(current['fog'] or wx['fog'])
+                current['rain']=int(current['rain'] or wx['rain']>0.05)
+                current['snow']=int(current['snow'] or wx['snow']>0.05)
         for link in candidates:
             lid = link["id"]
             buffers[lid] = min(max_storage[lid], buffers[lid] + rates[lid] * duration)
@@ -105,6 +126,8 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
         frames.append(SimulationFrame(
             slot=slot, time_seconds=slot * duration, positions=positions,
             weather_by_hap=weather_by_hap,
+            historical_weather_regions=historical_regions,
+            historical_weather_metadata=historical_metadata,
             links=link_states, demands=demand_states, qkps=qkp_states,
             stored_bits_total=round(sum(buffers.values()), 1),
             served_bps_total=round(sum(d.served_bps for d in demand_states), 2)))

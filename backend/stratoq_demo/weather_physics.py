@@ -1,10 +1,10 @@
 """Weather-specific attenuation overlay on the unmodified Balloon-QNet clear-sky eta.
 
-Uses helper.py's baseline extinction coefficients (fog 3.91/V, rain 2.8/V,
-snow 58/V). User rain/snow rates are mapped to visibility via an explicitly
-heuristic power law; the source helper has NO mm/h conversion. For comparison,
-5 mm/h rain and 2 mm/h water-equivalent snow correspond to V=4 km.
-This is NOT a validated precipitation microphysics model.
+Fog uses helper.py's 3.91/V visibility-based expression. Rain uses the
+ITU-R F.2106-1 1.076*R^.67 specific attenuation. Snow uses 2024 published
+wet/dry optical FSO rate laws. Snow wet/dry is an explicit manual choice; for
+ERA5 a temperature proxy selects it. These fits have known limitations and
+are not full microphysical scattering calculations.
 """
 from __future__ import annotations
 import math
@@ -37,6 +37,23 @@ def _intersect_intervals(gs, hap, weather):
     return circle_lo,circle_hi
 
 
+def extinction_db_per_km(effect, visibility_km=None, precipitation_rate_mm_h=None,
+                         wavelength_nm=1550., snow_type='wet'):
+    """Empirical optical specific attenuation in dB/km (see V10 documentation)."""
+    if effect == 'fog':
+        v=max(.01,float(visibility_km if visibility_km is not None else .5))
+        q=1.6 if v>50 else 1.3 if v>6 else .585*v**(1./3.)
+        return 3.91/v*(wavelength_nm/550.)**(-q)
+    r=max(0.,float(precipitation_rate_mm_h or 0.))
+    if not r:return 0.
+    if effect == 'rain':return 1.076*r**.67 # ITU-R F.2106-1
+    if effect == 'snow':
+        if snow_type=='wet':return (0.0001023*wavelength_nm+3.79)*r**.72
+        if snow_type=='dry':return (0.0000542*wavelength_nm+5.50)*r**1.38
+        raise ValueError('Snow wet/dry classification required')
+    raise ValueError('Unknown weather type: '+str(effect))
+
+
 def regional_weather_loss_db(gs, hap, weather):
     """Attenuation in dB for the ray portion in the weather cylinder.
 
@@ -58,18 +75,8 @@ def regional_weather_loss_db(gs, hap, weather):
         (hap.lon-gs.lon)*111.32*math.cos(math.radians((hap.lat+gs.lat)/2)),
         (hap.lat-gs.lat)*111.32), hap.altitude_km)*max(0.,hi-lo)
     if effect=='fog':
-        visibility=max(0.01,float(getattr(weather,'visibility_km',0.5)))
-        q=1.6 if visibility>50 else 1.3 if visibility>6 else 0.585*visibility**(1/3)
-        # Helper.py uses a Kim/Kruse-like visibility dependence; 1550 nm.
-        gamma=3.91/visibility*(1550/550)**(-q)
+        gamma=extinction_db_per_km('fog',visibility_km=getattr(weather,'visibility_km',None))
     else:
-        rate=max(0.,float(getattr(weather,'precipitation_rate_mm_h',5.0)))
-        if rate==0:gamma=0.
-        else:
-            reference=5.0 if effect=='rain' else 2.0
-            # Source helper assumes V=4 km. Visibility vs precipitation
-            # is NOT specified there: expose this approximate scaling.
-            power=0.67 if effect=='rain' else 0.8
-            gamma=(2.8 if effect=='rain' else 58.)/4. * (rate/reference)**power
+        gamma=extinction_db_per_km(effect,precipitation_rate_mm_h=getattr(weather,'precipitation_rate_mm_h',None),snow_type=getattr(weather,'snow_type','wet'))
     extra=max(0.,float(getattr(weather,'attenuation_db',0)))
     return gamma*length+extra

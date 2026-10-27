@@ -4,6 +4,7 @@ import numpy as np
 from .stratoq_data import gs, hap, link, demand, system
 from .setup import build_links
 from .trajectories import scenario_at, horizon_seconds
+from .era5_weather import scenario_era5
 from balloon_qnet.studio_analytical import geometry
 from .real_rates import calculate_key_rate_mac_real
 
@@ -22,8 +23,12 @@ class PhysicalNetwork:
 
 def create_physical_network(scenario, progress=None):
     dt=scenario.config.slot_seconds
+    era5=scenario_era5(scenario)
     horizon=horizon_seconds(scenario)
     slots=min(1500,int(horizon//dt)+1) if horizon is not None else scenario.config.slots
+    if era5 is not None:
+        # Historical weather belongs to one UTC day; never extrapolate.
+        slots=min(slots,(86400+dt-1)//dt)
     snapshots=[scenario_at(scenario, t*dt)[0] for t in range(slots)]
     syst=system(range(slots),dt,np.ones((len(scenario.ground_stations),len(scenario.balloons)),dtype=int))
     gnodes=[gs(g.lon%360.,g.lat,g.n_rx,g.n_tx,g.capacity_bits,g.id)
@@ -50,8 +55,18 @@ def create_physical_network(scenario, progress=None):
                 record['distance_km']=slant
                 record['elevation_deg']=el
                 record['in_range']=record['in_range'] and el>0
+                if era5 is not None:
+                    sampled=era5.frame(t*dt,dt)
+                    hap_sample=next(x for x in snap.balloons if x.id==h.id)
+                    era5_loss,era5_flags=era5.link_attenuation(g,hap_sample,sampled,
+                        wavelength_nm=scenario.config.optical.wavelength_nm)
+                    # Manual and ERA5 losses add in dB; binary flags are OR.
+                    record['weather_loss_db']+=era5_loss
+                    record['weather_flags']=tuple(int(a or b) for a,b in zip(record['weather_flags'],era5_flags))
                 record_map.setdefault(key,[]).append(record)
                 geo_map.setdefault(key,[]).append((slant,el,horiz))
+        if era5 is not None and progress and (t % max(1,slots//40)==0 or t==slots-1):
+            progress({'stage':'era5-sampling','total':slots,'completed':t+1,'cached':0,'computed':0})
     directed=[]
     for g in gnodes:
         for h in hnodes:

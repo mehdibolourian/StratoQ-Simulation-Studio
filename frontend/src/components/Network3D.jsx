@@ -264,14 +264,14 @@ function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange,
   </group>;
 }
 
-function WeatherParticles({ effect, radius, visibilityKm=0.5, precipitationRate=5 }) {
+function WeatherParticles({ effect, radius, visibilityKm=0.5, precipitationRate=5, compact=false }) {
   const group = useRef();
   const isFog = effect === 'fog';
   const isRain = effect === 'rain';
   // Deterministic particle distribution. Visuals are illustrative, not meteorology.
   const density = isFog ? Math.max(0.3, Math.min(3.5, 0.5 / Math.max(0.05, visibilityKm)))
     : Math.max(0, Math.min(4, precipitationRate / (isRain ? 5 : 2)));
-  const count = isFog ? Math.round(14 * density) : Math.round(100 * Math.sqrt(density));
+  const count = compact ? (isFog ? Math.round(3 * density) : Math.round(12 * Math.sqrt(density))) : (isFog ? Math.round(14 * density) : Math.round(100 * Math.sqrt(density)));
   const points = React.useMemo(() => Array.from({length: count}, (_, i) => {
     const angle = i * 2.399963;
     const radial = Math.sqrt((i + 0.5) / count) * radius * 0.88;
@@ -306,6 +306,7 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
   const offset = useRef([0,0]);
   const radius = weather.radius_km;
   const effect = weather.effect || 'fog';
+  const historical = weather.source === 'era5';
   const hue = effect === 'rain' ? '#6eabed' : effect === 'snow' ? '#dcecff' : '#aa8bff';
   function intersection(e) {
     const hit = new THREE.Vector3();
@@ -335,13 +336,13 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
     try{e.target.releasePointerCapture(e.pointerId);}catch{}document.body.style.cursor="auto";onDragEnd();
   }
   return <group position={[x,0,z]}
-    onPointerDown={down} onPointerMove={move} onPointerUp={up}
-    onPointerCancel={up} onPointerMissed={() => { if (dragging.current) {dragging.current=false;onDragEnd();} }}
-    onClick={e=>{e.stopPropagation();onSelect(weather.id);}}
-    onPointerOver={()=>{document.body.style.cursor=dragging.current?'grabbing':'grab';}}
-    onPointerOut={()=>{if(!dragging.current) document.body.style.cursor='auto';}}>
-    {/* A raised visible grab handle keeps pointer hits above ground and particles. */}
-    <mesh position={[0,1.7,0]} castShadow>
+    onPointerDown={historical?undefined:down} onPointerMove={historical?undefined:move} onPointerUp={historical?undefined:up}
+    onPointerCancel={historical?undefined:up} onPointerMissed={historical?undefined:() => { if (dragging.current) {dragging.current=false;onDragEnd();} }}
+    onClick={historical?undefined:e=>{e.stopPropagation();onSelect(weather.id);}}
+    onPointerOver={historical?undefined:()=>{document.body.style.cursor=dragging.current?'grabbing':'grab';}}
+    onPointerOut={historical?undefined:()=>{if(!dragging.current) document.body.style.cursor='auto';}}>
+    {/* Historical ERA5 cells visualize the gridded field; they have no grab handle. */}
+    {!historical && <><mesh position={[0,1.7,0]} castShadow>
       <sphereGeometry args={[1.05,20,12]} />
       <meshStandardMaterial color={hue} emissive={hue} emissiveIntensity={selected ? .38 : .13} roughness={.45} />
     </mesh>
@@ -349,18 +350,19 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
       <torusGeometry args={[1.30,.11,10,30]}/>
       <meshBasicMaterial color={selected?'#ffffff':hue}/>
     </mesh>
+    </>}
     <mesh position={[0,.01,0]} rotation={[-Math.PI/2,0,0]}>
       <circleGeometry args={[radius,64]}/>
       <meshBasicMaterial color={hue} transparent opacity={selected?.21:.085} side={THREE.DoubleSide} depthWrite={false}/>
     </mesh>
-    <mesh position={[0,0.035,0]} rotation={[-Math.PI/2,0,0]}>
+    {!historical && <mesh position={[0,0.035,0]} rotation={[-Math.PI/2,0,0]}>
       <ringGeometry args={[Math.max(.1,radius-.16),radius,64]}/>
       <meshBasicMaterial color={selected?'#ffffff':hue} transparent opacity={.8} side={THREE.DoubleSide}/>
-    </mesh>
-    <WeatherParticles effect={effect} radius={radius} visibilityKm={weather.visibility_km??0.5} precipitationRate={weather.precipitation_rate_mm_h??5}/>
-    <Html position={[0,15,0]} center distanceFactor={75} style={{pointerEvents:'none'}}>
+    </mesh>}
+    <WeatherParticles effect={effect} radius={radius} visibilityKm={weather.visibility_km??0.5} precipitationRate={weather.precipitation_rate_mm_h??5} compact={historical}/>
+    {!historical && <Html position={[0,15,0]} center distanceFactor={75} style={{pointerEvents:'none'}}>
       <div className="weather-label">{effect==='rain'?'☂':effect==='snow'?'❄':'☁'} {effect} · {radius} km · {effect==='fog' ? `${weather.visibility_km??0.5} km vis` : `${weather.precipitation_rate_mm_h??5} mm/h`}</div>
-    </Html>
+    </Html>}
   </group>;
 }
 

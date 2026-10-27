@@ -1,5 +1,8 @@
 # StratoQ Studio — 3D local network sandbox
 
+**Current historical-weather downloader (v1.0.3): Open-Meteo ERA5.** See [OPEN-METEO-V103.md](OPEN-METEO-V103.md) for installation, API, weather-unit conversion and local caching. The original CDS-based downloader is no longer used by the UI.
+
+
 A runnable starter for a balloon-assisted QKD visualizer using **React + Vite + React Three Fiber/Three.js + MapLibre GL JS + FastAPI**. It starts with two ground stations and one 15-km high-altitude platform around Timmins / Iroquois Falls, Ontario.
 
 **v0.8 physically calculated links:** The optical rates call the original

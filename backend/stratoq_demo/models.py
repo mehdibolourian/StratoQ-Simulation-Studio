@@ -1,4 +1,5 @@
 from typing import Literal
+from datetime import date
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -62,6 +63,7 @@ class WeatherRegion(BaseModel):
     # These are independent of the optional legacy extra attenuation override.
     visibility_km: float | None = Field(default=None, gt=0, le=100)
     precipitation_rate_mm_h: float | None = Field(default=None, ge=0, le=500)
+    snow_type: Literal["wet", "dry"] = "wet"
 
 
 
@@ -91,6 +93,10 @@ class SimulationConfig(BaseModel):
     allocation_mode: Literal["random", "greedy"] = "random"
     allocator_seed: int = Field(default=42, ge=0, le=2**31-1)
     channel_workers: int = Field(default=10, ge=1, le=24)
+    # Historical ERA5 (UTC) is optional: manual weather always remains additive.
+    weather_source: Literal["manual", "era5"] = "manual"
+    era5_date: date | None = None
+    era5_dataset_id: str | None = None
 
 
 class OpticalLinkOverride(BaseModel):
@@ -173,6 +179,8 @@ class SimulationFrame(BaseModel):
     links: list[LinkState]
     positions: dict[str, dict[str, float]] = Field(default_factory=dict)
     weather_by_hap: dict[str, dict[str, int]] = Field(default_factory=dict)
+    historical_weather_regions: list[dict] = Field(default_factory=list)
+    historical_weather_metadata: dict = Field(default_factory=dict)
     demands: list[DemandState]
     qkps: list[QKPState] = Field(default_factory=list)
     stored_bits_total: float

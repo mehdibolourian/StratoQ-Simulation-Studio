@@ -47,7 +47,7 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
         const feature = event.features?.[0];
         if (!feature) return;
         const active = latest.current.weather.find(w => w.id === id);
-        if (!active) return;
+        if (!active || active.source === 'era5') return;
         event.preventDefault();
         weatherDrag = {
           id, startLat:active.lat, startLon:active.lon,
@@ -119,7 +119,7 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
     markers.current = [];
     const nodes = [...scenario.ground_stations.map(n=>({...n, icon:'⌁', type:'gs'})),
       ...scenario.balloons.map(n=>({...n, icon:'▲', type:'hap'})),
-      ...scenario.weather_regions.map(n=>({...n, icon:n.effect==='rain'?'☂':n.effect==='snow'?'❄':'☁', type:'weather'}))];
+      ...scenario.weather_regions.filter(n=>n.source!=='era5').map(n=>({...n, icon:n.effect==='rain'?'☂':n.effect==='snow'?'❄':'☁', type:'weather'}))];
     nodes.forEach(node => {
       const el = document.createElement('button');
       el.className = `map-marker ${node.type} ${selectedId===node.id ? 'selected' : ''}`;
@@ -137,6 +137,6 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
 
   return <div className="map-host">
     <div ref={container} className="map-canvas" />
-    <div className="map-hint">Drag weather region or marker to reposition</div>
+    <div className="map-hint">Drag manual weather regions · ERA5 cells are read-only</div>
   </div>;
 }

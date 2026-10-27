@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, ArrowDownToLine, ArrowRight, Box, Check, ChevronDown, CircleHelp,
-  Cloud, Crosshair, Gauge, Layers3, Map, Maximize2, MousePointer2,
+  Cloud, CloudRain, CalendarDays, Crosshair, Gauge, Layers3, Map, Maximize2, MousePointer2,
   Pause, Play, Plus, RadioTower, RefreshCcw, Rotate3D, SatelliteDish,
   Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X,
 } from 'lucide-react';
@@ -11,7 +11,8 @@ import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 
-const STUDIO_VERSION = '0.9.0';
+const STUDIO_VERSION = '1.0.2';
+const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
@@ -66,15 +67,32 @@ export default function App() {
   const [uploadingTrajectory, setUploadingTrajectory] = useState(false);
   const [physicsProgress, setPhysicsProgress] = useState(null);
   const [physicsStatus, setPhysicsStatus] = useState(null);
+  const [era5Job, setEra5Job] = useState(null);
+  const [era5Loading, setEra5Loading] = useState(false);
+  const [era5Elapsed, setEra5Elapsed] = useState(0);
+  const [era5Preview, setEra5Preview] = useState([]);
+  const [era5Meta, setEra5Meta] = useState(null);
   const requestId = useRef(0);
+  useEffect(() => {
+    if (!era5Loading) return;
+    const started = Date.now();
+    setEra5Elapsed(0);
+    const timer = setInterval(() => setEra5Elapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(timer);
+  }, [era5Loading]);
 
   const currentFrame = !dirty ? result?.frames[frameIndex] : null;
+  const useEra5 = scenario.config.weather_source === 'era5';
+  const historicalRegions = useEra5 ? (currentFrame?.historical_weather_regions || era5Preview) : EMPTY_WEATHER;
+  const era5Date = scenario.config.era5_date || '';
   const visualScenario = useMemo(() => {
-    if (!currentFrame?.positions) return scenario;
     const copy = clone(scenario);
-    copy.balloons.forEach(h => { const p = currentFrame.positions[h.id]; if (p) Object.assign(h, p); });
+    if (currentFrame?.positions) copy.balloons.forEach(h => { const p = currentFrame.positions[h.id]; if (p) Object.assign(h, p); });
+    // Display-only ERA5 grid cells. Manual regions are kept unchanged.
+    // Backend integrates the ERA5 raster independently (no duplicate attenuation).
+    if (useEra5) copy.weather_regions = [...copy.weather_regions, ...historicalRegions];
     return copy;
-  }, [scenario, currentFrame]);
+  }, [scenario, currentFrame, useEra5, historicalRegions]);
   const nodes = useMemo(() => [...scenario.ground_stations, ...scenario.balloons, ...scenario.weather_regions], [scenario]);
   const topologyLinks = useMemo(() => potentialLinks(visualScenario, currentFrame, !dirty), [visualScenario, currentFrame, dirty]);
   const selectedLink = topologyLinks.find(l => l.id === selectedId);
@@ -117,7 +135,7 @@ export default function App() {
     } else if(kind==='weather') {
       const id=`weather-${base}`;
       patchScenario(s=>s.weather_regions.push({id,name:`Fog region ${s.weather_regions.length+1}`,
-        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:0,effect:"fog",visibility_km:0.5,precipitation_rate_mm_h:5}));
+        lat:CENTER.lat,lon:CENTER.lon,radius_km:16,attenuation_db:0,effect:"fog",visibility_km:0.5,precipitation_rate_mm_h:5,snow_type:"wet"}));
       setSelectedId(id);
     } else if (kind==='demand') {
       if(scenario.ground_stations.length < 2) {setError('Add two ground stations before creating a demand.');return;}
@@ -165,8 +183,75 @@ export default function App() {
     } catch(e) { setError(`Trajectory import: ${e.message}`); }
     finally {setUploadingTrajectory(false);}
   }
+  function setEra5Date(value) {
+    patchScenario(s=>{
+      s.config.era5_date=value||null;
+      s.config.era5_dataset_id=null;
+      s.config.weather_source='manual';
+    });
+    setEra5Preview([]);setEra5Meta(null);setEra5Job(null);
+  }
+  function activateEra5(meta) {
+    patchScenario(s=>{
+      s.config.weather_source='era5';
+      s.config.era5_date=meta.date_utc;
+      s.config.era5_dataset_id=meta.dataset_id;
+      s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));
+    });
+    setEra5Meta(meta);setFrameIndex(0);
+  }
+  async function retrieveEra5() {
+    if(!era5Date){setError('Select a historical UTC date first.');return;}
+    setEra5Loading(true);setEra5Job({stage:'Connecting to Open-Meteo…',status:'running'});setError('');
+    try {
+      const response=await fetch('/api/open-meteo/jobs',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({date_utc:era5Date,scenario})});
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.detail||`HTTP ${response.status}`);
+      let state=data;
+      while(state.status==='queued'||state.status==='running') {
+        await new Promise(resolve=>setTimeout(resolve,1700));
+        const progress=await fetch(`/api/open-meteo/jobs/${data.id}`,{cache:'no-store'});
+        if(!progress.ok)throw new Error(progress.status === 404
+          ? 'The ERA5 download job disappeared (backend restarted). Restart FastAPI and retry; completed Open-Meteo batches will be reused.'
+          : `ERA5 status HTTP ${progress.status}`);
+        state=await progress.json();setEra5Job(state);
+      }
+      if(state.status!=='complete')throw new Error(state.error||'ERA5 retrieval failed');
+      activateEra5(state.dataset);
+    }catch(e){setError(`ERA5: ${e.message}`);}finally{setEra5Loading(false);}
+  }
+  async function uploadERA5(file) {
+    if(!file)return;
+    if(!era5Date){setError('Choose a UTC date before uploading ERA5 NetCDF.');return;}
+    setEra5Loading(true);setError('');setEra5Job({stage:'Parsing local ERA5…',status:'running'});
+    try {
+      const form=new FormData();form.append('file',file);form.append('date_utc',era5Date);
+      const response=await fetch('/api/era5/upload',{method:'POST',body:form});
+      const data=await response.json();
+      if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:JSON.stringify(data.detail));
+      activateEra5(data);setEra5Job({status:'complete',stage:'ready',dataset:data});
+    }catch(e){setError(`ERA5 import: ${e.message}`);}finally{setEra5Loading(false);}
+  }
+  useEffect(()=>{
+    const datasetId=scenario.config.era5_dataset_id;
+    if(!useEra5||!datasetId||currentFrame?.historical_weather_regions){return;}
+    let alive=true;
+    fetch(`/api/era5/datasets/${encodeURIComponent(datasetId)}/frame?date_utc=${encodeURIComponent(era5Date)}&slot_seconds=${scenario.config.slot_seconds}&slot=${Math.min(frameIndex,Math.floor((86400-1)/scenario.config.slot_seconds))}`,{cache:'no-store'})
+      .then(async r=>{const data=await r.json();if(!r.ok)throw new Error(data.detail||'ERA5 preview failed');return data;})
+      .then(data=>{if(alive){setEra5Preview(data.regions);setEra5Meta(data.dataset);}})
+      .catch(e=>{if(alive)setError(`ERA5 preview: ${e.message}`)});
+    return ()=>{alive=false;};
+  },[scenario.config.era5_dataset_id,scenario.config.slot_seconds,era5Date,frameIndex,useEra5,dirty]);
+  function toggleEra5(enabled) {
+    if(enabled && !scenario.config.era5_dataset_id){setError('Load a historical ERA5 dataset before enabling historical weather.');return;}
+    patchScenario(s=>{s.config.weather_source=enabled?'era5':'manual';if(enabled)s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));});
+  }
   async function runSim(caseInput=scenario, {silent=false, autoPlay=false}={}) {
     const id=++requestId.current;
+    if(caseInput.config.weather_source==='era5' && !caseInput.config.era5_dataset_id){
+      setError('Load ERA5 historical weather first, or switch back to Manual only.');return;
+    }
     setRunning(true);setError('');setPlaying(false);
     setPhysicsProgress({stage:'queued',completed:0,total:0,cached:0,computed:0});
     try {
@@ -221,9 +306,9 @@ export default function App() {
   function reset() {
     const resetCase=clone(INITIAL_SCENARIO);
     setScenario(resetCase); setSelectedId('hap-1'); setFrameIndex(0); setSceneKey(k=>k+1);
-    setPlaying(false); setDirty(true); runSim(resetCase);
+    setPlaying(false); setDirty(true); setEra5Preview([]);setEra5Meta(null);setEra5Job(null);runSim(resetCase);
   }
-  const totalFrames=result?.frames.length||scenario.config.slots;
+  const totalFrames=(!dirty ? result?.frames.length : scenario.config.slots)||scenario.config.slots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
   return <div className="app-shell">
@@ -252,6 +337,35 @@ export default function App() {
           </div>
         </section>
         <div className="side-divider"/>
+        <section className="section-pad era5-panel">
+          <GroupTitle><CalendarDays size={13}/> HISTORICAL WEATHER · ERA5</GroupTitle>
+          <label className="era5-switch"><input type="checkbox" checked={useEra5} onChange={e=>toggleEra5(e.target.checked)}/>
+            <span>Use ERA5 historical weather</span></label>
+          <label className="era5-date-label"><span>Date (UTC)</span>
+            <input aria-label="ERA5 historical date UTC" type="date" value={era5Date} max={new Date(Date.now()-7*86400000).toISOString().slice(0,10)} onChange={e=>setEra5Date(e.target.value)} /></label>
+          <button className="era5-load" type="button" onClick={retrieveEra5} disabled={era5Loading||!era5Date}>
+            <CloudRain size={14}/>{era5Loading?'Retrieving ERA5…':'Load ERA5 from Open-Meteo'}</button>
+          <label className="era5-import">Import local ERA5 .nc / .zip
+            <input type="file" accept=".nc,.nc4,.zip" disabled={era5Loading} onChange={e=>{uploadERA5(e.target.files?.[0]);e.target.value='';}}/></label>
+          {era5Job?.stage && <div className="era5-progress" role="status" aria-live="polite">
+            <div className="era5-progress-label"><small>{era5Job.status==='failed'?'Error: ':''}{era5Job.stage}</small>
+              <small>{era5Loading?`${Math.floor(era5Elapsed/60)}m ${String(era5Elapsed%60).padStart(2,'0')}s`:''}</small></div>
+            {(era5Loading || era5Job.status==='complete') && <>
+              <div className="era5-progress-track" aria-label="Completed Open-Meteo grid batches">
+                <div style={{width:`${Math.min(100,100*(era5Job.completed_steps||0)/(era5Job.total_steps||1))}%`}} />
+                {era5Loading && <span className="era5-progress-active" />}
+              </div>
+              <small className="era5-progress-caption">
+                {era5Job.completed_steps||0}/{era5Job.total_steps||1} grid batches completed
+                {era5Job.transferred_bytes>0 ? ` · ${(era5Job.transferred_bytes/1024).toFixed(1)} KB received for current file` : ''}
+              </small>
+              <small className="era5-progress-note">Sequential Open-Meteo requests; completed batches are cached locally.</small>
+            </>}
+          </div>}
+          {scenario.config.era5_dataset_id && <small className="era5-loaded">{useEra5?'● Historical mode active':'○ ERA5 loaded, paused'} · {era5Date}</small>}
+          <p className="era5-help">ERA5 reanalysis via Open-Meteo (no CDS queue or API key). 0.25° grid, UTC; snow uses Open-Meteo’s fixed snow-to-water conversion. Manual weather remains additive; fog is a proxy.</p>
+        </section>
+        <div className="side-divider"/>
         <section className="section-pad">
           <GroupTitle>SCENE OBJECTS</GroupTitle>
           <div className="object-list">
@@ -271,7 +385,7 @@ export default function App() {
           {running?'Computing physical rates…':'Run simulation'} <ArrowRight size={16}/>
         </button>
         {running && physicsProgress && <div className="physics-progress" role="status" aria-live="polite">
-          <div className="physics-progress-meta"><b>{physicsProgress.stage==='channel'?'Calculating upstream channel':'Preparing physical setup…'}</b>
+          <div className="physics-progress-meta"><b>{physicsProgress.stage==='channel'?'Calculating upstream channel':physicsProgress.stage==='era5-sampling'?'Sampling ERA5 weather along links…':'Preparing physical setup…'}</b>
           <span>{physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'Initializing'}</span></div>
           <div className="physics-progress-track"><div style={{width:`${physicsProgress.total?Math.min(100,100*physicsProgress.completed/physicsProgress.total):3}%`}} /></div>
           <small>{physicsProgress.cached||0} reused · {physicsProgress.computed||0} computed · {physicsProgress.workers||0} workers</small>
@@ -338,13 +452,13 @@ export default function App() {
         {error && <div className="error-bar"><WifiOff size={15}/><span>{error}</span><button onClick={()=>setError('')}><X size={15}/></button></div>}
         <div className="timeline">
           <div className="timeline-header"><div className="timeline-title"><span className="timeline-play-icon"><Activity size={17}/></span>
-            <div><strong>Simulation timeline</strong><small>{totalFrames} slots · {scenario.config.slot_seconds}s per slot</small></div></div>
-            <div className="timeline-actions"><span className="time-current">T+{toClock((currentFrame?.time_seconds ?? 0))}</span>
+            <div><strong>Simulation timeline</strong><small>{totalFrames} slots · {scenario.config.slot_seconds}s per slot{useEra5?' · ERA5 UTC':''}</small></div></div>
+            <div className="timeline-actions"><span className="time-current">{useEra5&&era5Date ? `${era5Date} ${toClock((currentFrame?.time_seconds ?? frameIndex*scenario.config.slot_seconds))} UTC` : `T+${toClock((currentFrame?.time_seconds ?? 0))}`}</span>
               <button onClick={()=>{setFrameIndex(0);setPlaying(false);}} title="Restart playback"><RefreshCcw size={15}/></button>
               <button className="playback-button" onClick={togglePlayback} disabled={running} title={dirty || !result ? "Recalculate and play updated scenario" : playing ? "Pause" : "Play"}>{running?<RefreshCcw size={16} className="spin"/>:playing?<Pause size={16} fill="currentColor"/>:<Play size={16} fill="currentColor"/>}</button>
             </div></div>
           <div className="trajectory-slot-control"><label htmlFor="slot-seconds">Time slot</label>
-            <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);})}>
+            <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);if(s.config.weather_source==='era5')s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));})}>
               {[10,30,60,120,300,600,900,1800,3600].map(v=><option key={v} value={v}>{v<60?`${v} sec`:v<3600?`${v/60} min`:`${v/3600} hour`}</option>)}
             </select><small>Trajectory horizon adjusts on Play</small></div>
           <div className="timeline-scrub"><span>00:00</span><input aria-label="Simulation time slot" type="range" min={0} max={Math.max(0,totalFrames-1)}
@@ -352,7 +466,7 @@ export default function App() {
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
             <span>{toClock((totalFrames-1)*scenario.config.slot_seconds)}</span></div>
           <div className="timeline-footer"><span><span className="timeline-dot aqua"/> Link state</span><span><span className="timeline-dot purple"/> QKP buffers</span>
-            <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{dirty?' · press Play to update':''}</span></div>
+            <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{useEra5?` · ${historicalRegions.length} ERA5 cells shown · ${scenario.weather_regions.length} manual`:''}{dirty?' · press Play to update':''}</span></div>
         </div>
       </div>
     </main>
@@ -438,6 +552,10 @@ export default function App() {
                 <div className="field-grid">
                   {selected.effect==='fog' ? <Numeric label="Meteorological visibility" value={selected.visibility_km??0.5} min={0.05} max={100} step={0.05} unit="km" onChange={v=>modifyItem(selected.id,'visibility_km',v)} /> : <Numeric label="Precipitation rate" value={selected.precipitation_rate_mm_h??5} min={0} max={500} step={0.5} unit="mm/h" onChange={v=>modifyItem(selected.id,'precipitation_rate_mm_h',v)} />}
                 </div>
+                {selected.effect==='snow' && <label className="field-label"><span>Snow type (optical attenuation fit)</span>
+                  <select value={selected.snow_type||'wet'} onChange={e=>modifyItem(selected.id,'snow_type',e.target.value)}>
+                    <option value="wet">Wet snow</option><option value="dry">Dry snow</option>
+                  </select></label>}
                 <p className="field-help">{selected.effect==='fog'?'Lower visibility means denser fog.':'Higher rate increases atmospheric loss and particle density. Snow uses liquid-water equivalent mm/h.'} The rate-to-attenuation scaling is approximate; see WEATHER-INTENSITY-V09.md.</p>
               </div>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
@@ -457,8 +575,9 @@ export default function App() {
         </div>
         <div className="inspector-section">
           <GroupTitle>SIMULATION CONFIG</GroupTitle>
-          <div className="field-grid"><Numeric label="Time slots" value={scenario.config.slots} min={1} max={288} step={1} onChange={v=>patchScenario(s=>s.config.slots=v)} />
-            <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>s.config.slot_seconds=v)} /></div>
+          {useEra5 && <p className="field-help">Historical ERA5 date: {era5Date} UTC. At most 24 h; changing the time slot resamples the same hourly dataset. Manual regions add to ERA5 attenuation. ERA5 animation shows up to 75 visual cells; link physics samples the full grid.</p>}
+          <div className="field-grid"><Numeric label="Time slots" value={scenario.config.slots} min={1} max={1500} step={1} onChange={v=>patchScenario(s=>s.config.slots=v)} />
+            <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>{s.config.slot_seconds=v;if(s.config.weather_source==='era5')s.config.slots=Math.min(1500,Math.ceil(86400/v));})} /></div>
           <div className="field-grid">
             <label className="field-label"><span>Placeholder routing</span>
               <select value={scenario.config.allocation_mode || 'random'} onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
