@@ -22,11 +22,11 @@ def test_csv_interpolation_and_dynamic_geometry():
     res=client.post('/api/simulate',json=scenario)
     assert res.status_code==200, res.text
     frames=res.json()['frames']
-    assert len(frames)==3
+    assert len(frames)==2
     assert frames[0]['positions']['hap-1']['lon'] == -81
     assert abs(frames[1]['positions']['hap-1']['lon'] + 80.4)<1e-6
     assert frames[0]['links'][0]['distance_km'] != frames[1]['links'][0]['distance_km']
-    assert frames[0]['time_seconds']==0 and frames[2]['time_seconds']==600
+    assert frames[0]['time_seconds']==0 and frames[1]['time_seconds']==300
 
 
 def test_invalid_upload():

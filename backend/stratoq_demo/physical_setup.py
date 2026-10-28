@@ -4,6 +4,7 @@ import numpy as np
 from .stratoq_data import gs, hap, link, demand, system
 from .setup import build_links
 from .trajectories import scenario_at, horizon_seconds
+from .demand_profiles import demand_rates
 from .era5_weather import scenario_era5
 from balloon_qnet.studio_analytical import geometry
 from .real_rates import calculate_key_rate_mac_real
@@ -25,7 +26,7 @@ def create_physical_network(scenario, progress=None):
     dt=scenario.config.slot_seconds
     era5=scenario_era5(scenario)
     horizon=horizon_seconds(scenario)
-    slots=min(1500,int(horizon//dt)+1) if horizon is not None else scenario.config.slots
+    slots=max(1,int(np.ceil(horizon/dt))) if horizon is not None else scenario.config.slots
     if era5 is not None:
         # Historical weather belongs to one UTC day; never extrapolate.
         slots=min(slots,(86400+dt-1)//dt)
@@ -75,7 +76,8 @@ def create_physical_network(scenario, progress=None):
             W=[r['weather_flags'] for r in history]
             for n1,n2 in [(g,h),(h,g)]:
                 directed.append(link(n1,n2,V[:],W[:],[0.]*slots))
-    demands=[demand([d.rate_bps]*slots,
+    profiles=demand_rates(scenario, slots, dt)
+    demands=[demand(profiles[d.id],
                     next(g for g in gnodes if g.tag==d.source),
                     next(g for g in gnodes if g.tag==d.target))
              for d in scenario.demands]

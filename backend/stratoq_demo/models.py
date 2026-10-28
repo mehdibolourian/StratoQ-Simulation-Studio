@@ -1,4 +1,5 @@
 from typing import Literal
+import math
 from datetime import date
 from pydantic import BaseModel, Field, model_validator
 
@@ -27,13 +28,22 @@ class Balloon(BaseModel):
     n_tx: int = Field(default=1, ge=0, le=10000)
     trajectory_id: str | None = None
     trajectory_name: str | None = None
+    trajectory_duration_seconds: float | None = Field(default=None, gt=0)
 
 
 class Demand(BaseModel):
     id: str
     source: str
     target: str
-    rate_bps: float = Field(gt=0, le=1e9)
+    rate_bps: float = Field(gt=0, le=1e9)  # Mean demand across horizon (constant in legacy exports).
+    pattern: Literal["constant", "diurnal", "dual_peak", "bursty"] = "constant"
+    peak_hour: float = Field(default=14., ge=0, lt=24)
+    peak_uplift_pct: float = Field(default=70., ge=0, le=200)
+    peak_width_hours: float = Field(default=3., ge=0.3, le=12)
+    second_peak_hour: float = Field(default=21., ge=0, lt=24)
+    second_peak_ratio_pct: float = Field(default=65., ge=0, le=200)
+    burst_interval_hours: float = Field(default=6., ge=0.5, le=24)
+    burst_duration_minutes: float = Field(default=45., ge=1, le=1440)
 
 
 class WeatherRegion(BaseModel):
@@ -90,17 +100,22 @@ class SimulationConfig(BaseModel):
     @classmethod
     def migrate_legacy_allocator(cls, value):
         """Accept old exported experiments without silently retaining placeholders."""
-        if isinstance(value, dict) and value.get('allocation_mode') in ('random','greedy'):
+        if isinstance(value, dict):
             value = value.copy()
-            value['allocation_mode'] = 'mcr_q' if value['allocation_mode']=='random' else 'scar_q'
+            if value.get('allocation_mode') in ('random', 'greedy'):
+                value['allocation_mode'] = 'mcr_q' if value['allocation_mode']=='random' else 'scar_q'
+            if 'slots' not in value:
+                value['slots'] = max(1, math.ceil(86400 / int(value.get('slot_seconds', 300))))
         return value
 
-    slots: int = Field(default=24, ge=1, le=1500)
+    slots: int = Field(default=288, ge=1, le=86400)
     slot_seconds: int = Field(default=300, ge=1, le=86400)
     base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)  # legacy input, ignored by physical engine
     optical: OpticalParameters = Field(default_factory=OpticalParameters)
-    allocation_mode: Literal["scar_q", "mcr_q"] = "scar_q"
+    allocation_mode: Literal["scar_q", "mcr_q", "optimal"] = "scar_q"
     allocator_seed: int = Field(default=42, ge=0, le=2**31-1)
+    optimality_gap: float = Field(default=0.01, ge=0, le=0.5)
+    optimal_time_limit_seconds: int = Field(default=300, ge=1, le=86400)
     mcr_samples: int = Field(default=3, ge=1, le=100)  # Notebook mcr_policy default n_samples=3
     channel_workers: int = Field(default=10, ge=1, le=24)
     # Historical ERA5 (UTC) is optional: manual weather always remains additive.

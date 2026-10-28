@@ -93,7 +93,11 @@ def parse_trajectory(filename, contents):
         raise ValueError('Need at least two distinct increasing timestamps')
     if min(altitudes) < 0 or max(altitudes)>100:
         raise ValueError('Altitude must be between 0 and 100 km after metre conversion')
-    return dict(times=times, lats=latitudes, lons=longitudes, alts=altitudes, duration_seconds=times[-1], rows=len(times))
+    # Normalize elapsed time to the first valid sample; absolute file timestamps
+    # must not inflate the trajectory simulation horizon.
+    elapsed = [t - times[0] for t in times]
+    return dict(times=elapsed, lats=latitudes, lons=longitudes, alts=altitudes,
+                duration_seconds=elapsed[-1], rows=len(times))
 
 
 def register(filename, contents):

@@ -39,6 +39,9 @@ def candidate_paths(scenario, rates, buffers, duration):
     paths = {}
     for d in scenario.demands:
         options = []
+        if d.rate_bps <= EPS:
+            paths[d.id] = options
+            continue  # An inactive zero-rate slot must not reserve a HAP terminal.
         for h in scenario.balloons:
             a, b = f'{d.source}:{h.id}', f'{d.target}:{h.id}'
             avail = min(max(0., rates.get(a, 0.)) + max(0., buffers.get(a, 0.))/duration,

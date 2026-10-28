@@ -66,9 +66,9 @@ def test_qkp_conservation_uses_kmax_no_random_rate():
 def test_offline_trajectory_and_weather_adapt_to_each_time_slot():
     s=default_scenario();s.config.slots=2;s.config.slot_seconds=60
     h=s.balloons[0]
-    TRAJECTORIES['integration-demo']={'times':[0.,60.],
-        'lats':[h.lat,h.lat+1], 'lons':[h.lon,h.lon],
-        'alts':[15.,15.], 'duration_seconds':60., 'rows':2}
+    TRAJECTORIES['integration-demo']={'times':[0.,60.,120.],
+        'lats':[h.lat,h.lat+1,h.lat+1], 'lons':[h.lon,h.lon,h.lon],
+        'alts':[15.,15.,15.], 'duration_seconds':120., 'rows':3}
     try:
         h.trajectory_id='integration-demo'
         p=create_physical_network(s)

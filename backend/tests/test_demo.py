@@ -8,7 +8,7 @@ def test_default_generates_two_links_and_frames():
     case = default_scenario()
     assert len(build_links(case)) == 2
     result = allocate(case)
-    assert len(result.frames) == 24
+    assert len(result.frames) == 288  # Default 24h / 300s
     assert result.frames[0].demands[0].served_bps > 0
     assert result.frames[-1].stored_bits_total >= 0
 

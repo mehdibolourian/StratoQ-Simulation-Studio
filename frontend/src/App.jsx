@@ -10,8 +10,9 @@ import GeoMap from './components/GeoMap.jsx';
 import { INITIAL_SCENARIO } from './lib/sample.js';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
+import { demandSeries, simulationHorizonSeconds, slotCount } from './lib/demandProfiles.js';
 
-const STUDIO_VERSION = '1.0.5'; // API contract unchanged; link-state visualization build v1.1.3
+const STUDIO_VERSION = '1.0.5'; // Stable API handshake; v1.1.4 frontend feature build
 const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
 function migrateAllocator(scenario) {
@@ -19,12 +20,34 @@ function migrateAllocator(scenario) {
   if (result.config?.allocation_mode === 'random') result.config.allocation_mode = 'mcr_q';
   else if (result.config?.allocation_mode === 'greedy') result.config.allocation_mode = 'scar_q';
   else if (!result.config?.allocation_mode) result.config.allocation_mode = 'scar_q';
+  result.config.slots = slotCount(result);
   return result;
 }
 const fmtRate = (n) => !Number.isFinite(n) ? '—' : `${(n / 1000).toFixed(1)} kb/s`;
+const fmtKeys = (n) => !Number.isFinite(n) ? '—' : n >= 1e9 ? `${(n/1e9).toFixed(3)} Gb` : n >= 1e6 ? `${(n/1e6).toFixed(3)} Mb` : `${Math.round(n).toLocaleString()} bits`;
 const fmtBits = (n) => !Number.isFinite(n) ? '—' : n >= 1e6 ? `${(n/1e6).toFixed(2)} Mb` : `${(n/1000).toFixed(0)} kb`;
 const toClock = (secs) => `${String(Math.floor(secs/3600)).padStart(2,'0')}:${String(Math.floor(secs%3600/60)).padStart(2,'0')}`;
 
+function DemandPreview({ demand, slots, seconds }) {
+  const rates = useMemo(() => demandSeries(demand, slots, seconds), [demand, slots, seconds]);
+  if(!rates.length) return null;
+  const n = Math.min(180, rates.length);
+  const sampled = Array.from({length:n},(_,i)=>rates[Math.min(rates.length-1,Math.floor(i*(rates.length-1)/Math.max(1,n-1)))]);
+  const peak = Math.max(...sampled, 1);
+  const points = sampled.map((value,i)=>`${(i/(n-1||1)*268).toFixed(1)},${(80 - 70*value/peak).toFixed(1)}`).join(' ');
+  const area = `0,80 ${points} 268,80`;
+  return <div className="demand-preview" aria-label="Demand rate pattern preview">
+    <div className="demand-preview-head"><b>Demand preview</b><span>Mean {fmtRate(demand.rate_bps)} · Peak {fmtRate(peak)}</span></div>
+    <svg viewBox="0 0 280 100" preserveAspectRatio="none" role="img" aria-label="Requested key rate over simulated time">
+      <line x1="6" y1="80" x2="274" y2="80" stroke="#516171" strokeWidth="1"/>
+      <polygon points={area} fill="rgba(145,154,190,.16)"/>
+      <polyline points={points} fill="none" stroke="#abb3d0" strokeWidth="2.3" strokeLinejoin="round"/>
+      <text x="5" y="94" fill="#8f9bad" fontSize="9">0h</text>
+      <text x="274" y="94" textAnchor="end" fill="#8f9bad" fontSize="9">{(slots*seconds/3600).toFixed(1)}h</text>
+    </svg>
+    <small>Mean is maintained across the simulated horizon; pattern repeats every 24 hours.</small>
+  </div>;
+}
 function IconButton({ icon: Icon, label, onClick, active=false, disabled=false }) {
   return <button className={`icon-button ${active ? 'active' : ''}`} title={label} aria-label={label}
     onClick={onClick} disabled={disabled}><Icon size={17} /></button>;
@@ -230,8 +253,10 @@ export default function App() {
   const qkpOnlyLinks = currentFrame?.links.filter(l => l.allocated && !l.activated).length || 0;
   const slotSolver = currentFrame?.optimizer;
   const solverSummary = result?.summary;
+  const computedSlots = slotCount(scenario);
+  const horizonHours = simulationHorizonSeconds(scenario)/3600;
   const served = currentFrame?.served_bps_total;
-  const requested = scenario.demands.reduce((n,d)=>n+d.rate_bps, 0);
+  const requested = currentFrame?.demands.reduce((n,d)=>n+d.requested_bps,0) ?? scenario.demands.reduce((n,d)=>n+d.rate_bps,0);
   const satisfaction = currentFrame && requested > 0 ? Math.round(100*served/requested) : null;
   const firstLink = currentFrame?.links.find(l=>l.target===selectedId || l.source===selectedId) || currentFrame?.links[0];
 
@@ -270,7 +295,7 @@ export default function App() {
     } else if (kind==='demand') {
       if(scenario.ground_stations.length < 2) {setError('Add two ground stations before creating a demand.');return;}
       const id=`d-${base}`;
-      patchScenario(s=>s.demands.push({id,source:s.ground_stations[0].id,target:s.ground_stations[1].id,rate_bps:6000}));
+      patchScenario(s=>s.demands.push({id,source:s.ground_stations[0].id,target:s.ground_stations[1].id,rate_bps:6000,pattern:"constant"}));
       setSelectedId(id);
     }
   }
@@ -307,8 +332,8 @@ export default function App() {
       if (!response.ok) throw new Error(typeof payload.detail === 'string' ? payload.detail : 'Invalid trajectory');
       patchScenario(s=>{
         const hap=s.balloons.find(h=>h.id===hapId);
-        if (hap) Object.assign(hap, {trajectory_id:payload.trajectory_id,trajectory_name:payload.filename, ...payload.first});
-        s.config.slots = Math.min(1500, Math.floor(payload.duration_seconds/s.config.slot_seconds)+1);
+        if (hap) Object.assign(hap, {trajectory_id:payload.trajectory_id,trajectory_name:payload.filename, trajectory_duration_seconds:payload.duration_seconds, ...payload.first});
+        s.config.slots = slotCount(s);
       });
     } catch(e) { setError(`Trajectory import: ${e.message}`); }
     finally {setUploadingTrajectory(false);}
@@ -326,7 +351,7 @@ export default function App() {
       s.config.weather_source='era5';
       s.config.era5_date=meta.date_utc;
       s.config.era5_dataset_id=meta.dataset_id;
-      s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));
+      s.config.slots=slotCount(s);
     });
     setEra5Meta(meta);setFrameIndex(0);
   }
@@ -384,7 +409,7 @@ export default function App() {
   },[scenario.config.era5_dataset_id,scenario.config.slot_seconds,era5Date,frameIndex,useEra5,dirty]);
   function toggleEra5(enabled) {
     if(enabled && !scenario.config.era5_dataset_id){setError('Load a historical ERA5 dataset before enabling historical weather.');return;}
-    patchScenario(s=>{s.config.weather_source=enabled?'era5':'manual';if(enabled)s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));});
+    patchScenario(s=>{s.config.weather_source=enabled?'era5':'manual';if(enabled)s.config.slots=slotCount(s);});
   }
   async function runSim(caseInput=scenario, {silent=false, autoPlay=false}={}) {
     const id=++requestId.current;
@@ -443,20 +468,20 @@ export default function App() {
     setPlaying(true);
   }
   function reset() {
-    const resetCase=clone(INITIAL_SCENARIO);
+    const resetCase=migrateAllocator(INITIAL_SCENARIO);
     setScenario(resetCase); setSelectedId('hap-1'); setFrameIndex(0); setSceneKey(k=>k+1);
     setPlaying(false); setDirty(true); setEra5Preview([]);setEra5Meta(null);setEra5Job(null);runSim(resetCase);
   }
-  const totalFrames=(!dirty ? result?.frames.length : scenario.config.slots)||scenario.config.slots;
+  const totalFrames=(!dirty ? result?.frames.length : computedSlots)||computedSlots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
-  return <div className="app-shell" data-ui-build="1.1.3" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+  return <div className="app-shell" data-ui-build="1.1.4" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
     <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
       <div className="panel-resizer resizer-left" onPointerDown={e=>beginResize("left",e)} title="Drag to resize left panel"/>
       <div className="brand-wrap">
-        <div className="brand-symbol"><img className="brand-atom-mark" src="/favicon.svg?v=109" alt="StratoQ three-orbit atom emblem" /></div>
+        <div className="brand-symbol"><img className="brand-atom-mark" src="/favicon.svg?v=114" alt="StratoQ three-orbit atom emblem" /></div>
         <div className="brand-wordmark"><div className="brand-title">Strato<span>Q</span></div><div className="brand-product">SIMULATION STUDIO</div></div>
       </div>
       <div className="side-scroll">
@@ -523,7 +548,7 @@ export default function App() {
               selected={selectedId===g.id} onClick={()=>setSelectedId(g.id)} />)}
             {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.effect || 'fog'} · ${w.radius_km} km · ${w.effect==='fog' ? `${w.visibility_km??0.5} km vis.` : `${w.precipitation_rate_mm_h??5} mm/h`}`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
             {scenario.demands.map(d=><EntityItem key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
-              subtitle={`${fmtRate(d.rate_bps)} requested`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
+              subtitle={`${fmtRate(d.rate_bps)} mean · ${d.pattern||"constant"}`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
           </div>
         </section>
       </div>
@@ -607,13 +632,13 @@ export default function App() {
               <button className="playback-button" onClick={togglePlayback} disabled={running} title={dirty || !result ? "Recalculate and play updated scenario" : playing ? "Pause" : "Play"}>{running?<RefreshCcw size={16} className="spin"/>:playing?<Pause size={16} fill="currentColor"/>:<Play size={16} fill="currentColor"/>}</button>
             </div></div>
           <div className="trajectory-slot-control"><label htmlFor="slot-seconds">Time slot</label>
-            <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);if(s.config.weather_source==='era5')s.config.slots=Math.min(1500,Math.ceil(86400/s.config.slot_seconds));})}>
+            <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);s.config.slots=slotCount(s);})}>
               {[10,30,60,120,300,600,900,1800,3600].map(v=><option key={v} value={v}>{v<60?`${v} sec`:v<3600?`${v/60} min`:`${v/3600} hour`}</option>)}
-            </select><small>Trajectory horizon adjusts on Play</small></div>
+            </select><small>{horizonHours.toFixed(1)}h horizon{scenario.balloons.some(h=>h.trajectory_id)?" · trajectory":" · default"}</small></div>
           <div className="timeline-scrub"><span>00:00</span><input aria-label="Simulation time slot" type="range" min={0} max={Math.max(0,totalFrames-1)}
             value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);}}
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
-            <span>{toClock((totalFrames-1)*scenario.config.slot_seconds)}</span></div>
+            <span>{toClock(totalFrames*scenario.config.slot_seconds)}</span></div>
           <div className="timeline-footer"><span><span className="timeline-dot aqua"/> Link state</span><span><span className="timeline-dot purple"/> QKP buffers</span>
             <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{useEra5?` · ${historicalRegions.length} ERA5 cells shown · ${scenario.weather_regions.length} manual`:''}{dirty?' · press Play to update':''}</span></div>
         </div>
@@ -645,10 +670,16 @@ export default function App() {
             <div className="kpi-card"><div className="kpi-label"><Gauge size={14}/> Satisfaction</div><b>{satisfaction===null?'—':`${satisfaction}%`}</b><small>Current slot</small></div>
           </div>
           {slotSolver ? <div className="solver-audit" data-solver-status={slotSolver.solver_status}>
-            <div className="solver-audit-title"><Gauge size={15}/><b>GUROBI ALLOCATION · SLOT {frameIndex+1}</b><strong>{slotSolver.solver_status}</strong></div>
+            <div className="solver-audit-title"><Gauge size={15}/><b>{slotSolver.offline_full_horizon ? "GUROBI OFFLINE · FULL HORIZON" : `GUROBI ALLOCATION · SLOT ${frameIndex+1}`}</b><strong>{slotSolver.solver_status}</strong></div>
+            {solverSummary && <div className="solver-key-totals">
+              <div><small>Total served keys</small><strong>{fmtKeys(solverSummary.total_served_bits)}</strong></div>
+              <div><small>Total requested keys</small><strong>{fmtKeys(solverSummary.total_requested_bits)}</strong></div>
+              <div className="solver-total-coverage"><small>Overall served / requested</small><strong>{Number(100*(solverSummary.total_satisfaction??0)).toFixed(1)}%</strong></div>
+            </div>}
+            {solverSummary?.algorithm==='optimal' && <p className="offline-gap-note">Achieved gap: {Number(100*(solverSummary.achieved_mip_gap??0)).toFixed(2)}% · Requested ≤ {Number(100*(solverSummary.requested_mip_gap??0.01)).toFixed(2)}% · {solverSummary.optimality_certified?'Gap target certified':'Incumbent; not certified optimal'}</p>}
             <div className="solver-audit-stats">
-              <span>Models optimized <b>{slotSolver.candidate_solves}</b></span>
-              <span>Solver time <b>{Number(slotSolver.gurobi_runtime_seconds||0).toFixed(4)} s</b></span>
+              <span>Models optimized <b>{slotSolver.offline_full_horizon ? 1 : slotSolver.candidate_solves}</b></span>
+              <span>Solver time <b>{Number(slotSolver.offline_full_horizon ? solverSummary?.gurobi_runtime_seconds : slotSolver.gurobi_runtime_seconds||0).toFixed(4)} s</b></span>
               <span>Selected routes <b>{slotSolver.selected_paths}</b></span>
               <span>Activated optical links <b>{slotSolver.activated_links}</b></span>
               <span>Positive-capacity links <b>{slotSolver.positive_capacity_links}</b></span>
@@ -688,7 +719,20 @@ export default function App() {
                 {scenario.ground_stations.filter(g=>g.id!==selected.target).map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label>
               <label className="field-label"><span>Destination station</span><select value={selected.target} onChange={e=>modifyItem(selected.id,'target',e.target.value)}>
                 {scenario.ground_stations.filter(g=>g.id!==selected.source).map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label>
-              <Numeric label="Required rate" value={selected.rate_bps} unit="bps" min={1} max={1e9} onChange={v=>modifyItem(selected.id,'rate_bps',v)}/>
+              <Numeric label="Mean required key rate" value={selected.rate_bps} unit="bps" min={1} max={1e9} onChange={v=>modifyItem(selected.id,'rate_bps',v)}/>
+              <label className="field-label"><span>Demand pattern</span><select value={selected.pattern||'constant'} onChange={e=>modifyItem(selected.id,'pattern',e.target.value)}>
+                <option value="constant">Constant</option><option value="diurnal">Diurnal · Gaussian bell</option>
+                <option value="dual_peak">Two daily peaks</option><option value="bursty">Periodic bursts</option></select></label>
+              {(selected.pattern&&selected.pattern!=='constant') && <>
+                <div className="field-grid"><Numeric label={selected.pattern==='bursty'?'Burst offset':'Peak hour (0–24)'} value={selected.peak_hour??14} min={0} max={23.99} onChange={v=>modifyItem(selected.id,'peak_hour',v)}/>
+                  <Numeric label="Peak uplift" value={selected.peak_uplift_pct??70} min={0} max={200} unit="%" onChange={v=>modifyItem(selected.id,'peak_uplift_pct',v)}/></div>
+                {selected.pattern!=='bursty' && <Numeric label="Peak width (σ)" value={selected.peak_width_hours??3} min={0.3} max={12} unit="hours" onChange={v=>modifyItem(selected.id,'peak_width_hours',v)}/>}
+                {selected.pattern==='dual_peak' && <div className="field-grid"><Numeric label="Second peak hour" value={selected.second_peak_hour??21} min={0} max={23.99} onChange={v=>modifyItem(selected.id,'second_peak_hour',v)}/>
+                  <Numeric label="Second peak strength" value={selected.second_peak_ratio_pct??65} min={0} max={200} unit="%" onChange={v=>modifyItem(selected.id,'second_peak_ratio_pct',v)}/></div>}
+                {selected.pattern==='bursty' && <div className="field-grid"><Numeric label="Burst every" value={selected.burst_interval_hours??6} min={0.5} max={24} unit="hours" onChange={v=>modifyItem(selected.id,'burst_interval_hours',v)}/>
+                  <Numeric label="Burst length" value={selected.burst_duration_minutes??45} min={1} max={1440} unit="min" onChange={v=>modifyItem(selected.id,'burst_duration_minutes',v)}/></div>}
+              </>}
+              <DemandPreview demand={selected} slots={computedSlots} seconds={scenario.config.slot_seconds} />
               <div className="selection-stat"><span>Current served rate</span><b>{fmtRate(selectedDemand?.served_bps)}</b></div>
             </div> : <div className="field-stack">
               <TextField label="Display name" value={selected.name} onChange={v=>modifyItem(selected.id,'name',v)} />
@@ -729,7 +773,7 @@ export default function App() {
                   <input type="file" accept=".csv,.xlsx" disabled={uploadingTrajectory} onChange={e=>{uploadTrajectory(selected.id,e.target.files?.[0]);e.target.value='';}} />
                 </label>
                 <small>{selected.trajectory_name || 'Static position · no trajectory attached'}</small>
-                {selected.trajectory_id && <button className="trajectory-clear" onClick={()=>patchScenario(s=>{const h=s.balloons.find(h=>h.id===selected.id);delete h.trajectory_id;delete h.trajectory_name;})}>Remove trajectory</button>}
+                {selected.trajectory_id && <button className="trajectory-clear" onClick={()=>patchScenario(s=>{const h=s.balloons.find(h=>h.id===selected.id);delete h.trajectory_id;delete h.trajectory_name;delete h.trajectory_duration_seconds;s.config.slots=slotCount(s);})}>Remove trajectory</button>}
               </div>}
               {selectedType==='hap' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.target===selected.id).length}</b></div>}
               {selectedType==='hap' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.target===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.target===selected.id&&l.allocated&&!l.activated).length}</b></div>}
@@ -742,22 +786,30 @@ export default function App() {
         <div className="inspector-section">
           <GroupTitle>SIMULATION CONFIG</GroupTitle>
           {useEra5 && <p className="field-help">Historical ERA5 date: {era5Date} UTC. At most 24 h; changing the time slot resamples the same hourly dataset. Manual regions add to ERA5 attenuation. ERA5 animation shows up to 75 visual cells; link physics samples the full grid.</p>}
-          <div className="field-grid"><Numeric label="Time slots" value={scenario.config.slots} min={1} max={1500} step={1} onChange={v=>patchScenario(s=>s.config.slots=v)} />
-            <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>{s.config.slot_seconds=v;if(s.config.weather_source==='era5')s.config.slots=Math.min(1500,Math.ceil(86400/v));})} /></div>
+          <div className="field-grid"><label className="field-label"><span>Time slots · calculated</span><div className="number-shell"><strong>{computedSlots.toLocaleString()}</strong></div></label>
+            <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={10} max={86400} step={10} onChange={v=>patchScenario(s=>{s.config.slot_seconds=Math.max(10,v);s.config.slots=slotCount(s);})} /></div>
+          <p className="field-help">Horizon: {horizonHours.toFixed(2)} h ({scenario.balloons.some(h=>h.trajectory_id)?'shortest uploaded trajectory':'24-hour default'}). 10s / 30s intervals require thousands of slots and substantial computation.</p>
           <div className="allocator-picker">
             <label className="field-label"><span>Resource allocation algorithm</span>
-              <select value={['scar_q','mcr_q'].includes(scenario.config.allocation_mode) ? scenario.config.allocation_mode : 'scar_q'}
+              <select value={['scar_q','mcr_q','optimal'].includes(scenario.config.allocation_mode) ? scenario.config.allocation_mode : 'scar_q'}
                 onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
                 <option value="scar_q">SCAR-Q · Scarcity &amp; contention</option>
-                <option value="mcr_q">MCR-Q · Monte Carlo routing</option>
+                <option value="mcr_q">MCR-Q · Monte Carlo routing</option><option value="optimal">Optimal · Full-horizon MILP</option>
               </select>
             </label>
-            <p className="field-help">SCAR-Q greedily prioritizes scarce demands and less-contended paths (one Gurobi solve per slot). MCR-Q samples randomized path assignments, solves one Gurobi key-flow LP per sample, and retains the candidate serving the most keys. Both carry QKP storage across slots.</p>
+            <p className="field-help">SCAR-Q greedily prioritizes scarce demands and less-contended paths (one Gurobi solve per slot). MCR-Q samples randomized path assignments, solves one Gurobi key-flow LP per sample, and retains the candidate serving the most keys. Both carry QKP storage across slots. Optimal solves a single full-horizon MILP, maximizing served keys with global QKP carryover.</p>
             {scenario.config.allocation_mode === 'mcr_q' && <div className="field-grid">
               <Numeric label="Monte Carlo samples" value={scenario.config.mcr_samples ?? 3} min={1} max={100} step={1} onChange={v=>patchScenario(s=>s.config.mcr_samples=Math.max(1,Math.min(100,Math.round(v))))} />
               <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=Math.max(0,Math.round(v)))} />
             </div>}
             {scenario.config.allocation_mode === 'mcr_q' && <p className="field-help">Default: 3 Monte Carlo candidates per slot, as in the reference notebook. More samples mean more Gurobi solves. The seed makes repeated simulations reproducible.</p>}
+            {scenario.config.allocation_mode === 'optimal' && <>
+              <div className="field-grid">
+                <Numeric label="Optimality gap" value={100*(scenario.config.optimality_gap??0.01)} unit="%" min={0} max={50} step={0.1} onChange={v=>patchScenario(s=>s.config.optimality_gap=Math.max(0,Math.min(50,v))/100)}/>
+                <Numeric label="Time limit" value={scenario.config.optimal_time_limit_seconds??300} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>s.config.optimal_time_limit_seconds=Math.max(1,Math.round(v)))}/>
+              </div>
+              <p className="field-help">Full-horizon integer optimization can be expensive. If the time limit is reached, the UI reports the incumbent and achieved gap—not an optimality guarantee. For large simulations, compare heuristics first.</p>
+            </>}
             <div className="allocation-legend"><span><i className="legend-activated"/> Moving gold: optical generation</span><span><i className="legend-stored"/> Moving amber: QKP-only use</span><span><i className="legend-idle"/> Muted: available but idle</span></div>
           </div>
           <div className="inspector-subsection-heading"><GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle></div>
@@ -778,7 +830,7 @@ export default function App() {
             <Numeric label="Tracking efficiency" value={scenario.config.optical.tracking_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.tracking_efficiency=v)}/>
             <Numeric label="Detection efficiency" value={scenario.config.optical.detector_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.detector_efficiency=v)}/>
           </div>
-          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. SCAR-Q uses greedy path selection; MCR-Q uses random path sampling evaluated by Gurobi. Gurobi solves each candidate allocation LP. Unchanged physical evaluations are cached.</p>
+          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. SCAR-Q uses greedy path selection; MCR-Q uses random path sampling evaluated by Gurobi. Gurobi solves each heuristic allocation LP; Optimal solves one horizon-wide MILP. Unchanged physical evaluations are cached.</p>
         </div>
         <div className="inspector-section last"><GroupTitle>API ENGINE</GroupTitle>
           <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong><small>{backend==='online'?'Connection healthy':backend==='checking'?'Checking connection':'Not connected'}</small></div><span className="api-tag">{backend.toUpperCase()}</span></div>

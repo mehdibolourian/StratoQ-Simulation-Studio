@@ -87,5 +87,5 @@ def default_scenario() -> Scenario:
         ],
         "demands": [{"id": "d-1", "source": "gs-1", "target": "gs-2", "rate_bps": 4000}],
         "weather_regions": [],
-        "config": {"slots": 24, "slot_seconds": 300, "base_rate_bps": 36_000},
+        "config": {"slots": 288, "slot_seconds": 300, "base_rate_bps": 36_000},
     })
