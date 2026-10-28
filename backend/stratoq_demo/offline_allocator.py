@@ -68,6 +68,7 @@ def solve_offline(scenario, snapshots, rates_by_slot, capacity_by_link,
             model.addConstr(gp.quicksum(by_hap_tx.get((h.id, t), ())) <= h.n_tx)
     inventory = {}
     activation = {}
+    discarded = {}
     for lid in links:
         maximum = float(capacity_by_link[lid])
         for t in range(T+1):
@@ -86,8 +87,19 @@ def solve_offline(scenario, snapshots, rates_by_slot, capacity_by_link,
             # A stored key must exist at the beginning of the slot; newly
             # generated keys cannot be double-counted as stored consumption.
             model.addConstr(seconds * total_old <= inventory[lid, t], name=f'stored_availability_{lid}_{t}')
+            # Without overflow the capacity*y - fresh surplus is FORCED into a
+            # finite QKP, making long slots infeasible whenever
+            # seconds*(capacity - demand) exceeds the remaining buffer space.
+            # Model unused generated keys as discardable, like solve_slot().
+            # Discard is a *rate* (bits/s) for better numerical scaling; it
+            # is multiplied by seconds in the inventory balance below.
+            discarded[lid, t] = model.addVar(lb=0., ub=capacity,
+                                             name=f'discard_rate_{lid}_{t}')
+            model.addConstr(discarded[lid, t] <= capacity * activation[lid, t] - total_new,
+                            name=f'discard_only_generated_{lid}_{t}')
             model.addConstr(inventory[lid, t+1] == inventory[lid, t]
-                            + seconds * (capacity * activation[lid, t] - total_new - total_old),
+                            + seconds * (capacity * activation[lid, t] - total_new
+                                         - total_old - discarded[lid, t]),
                             name=f'QKP_carry_{lid}_{t}')
     # Case 2 objective from the uploaded offline.py: maximize total served bits.
     primary = seconds * gp.quicksum(flow.values())
@@ -128,6 +140,7 @@ def solve_offline(scenario, snapshots, rates_by_slot, capacity_by_link,
             'served': served, 'paths': selected, 'fresh': fresh_by_link,
             'saved': saved_by_link, 'activated': activated,
             'buffers': {lid:max(0.,float(inventory[lid,t+1].X)) for lid in links},
+            'discarded_bits': {lid:max(0.,float(discarded[lid,t].X))*seconds for lid in links},
             'optimizer': {
                 'solver_status': status_name, 'candidate_solves': 1 if t == 0 else 0,
                 'gurobi_version': '.'.join(map(str,gp.gurobi.version())),
@@ -140,6 +153,7 @@ def solve_offline(scenario, snapshots, rates_by_slot, capacity_by_link,
                 'achieved_mip_gap':gap if math.isfinite(gap) else -1.,
                 'objective_bound_bits':float(model.ObjBound) if model.IsMIP and math.isfinite(float(model.ObjBound)) else -1.,
                 'offline_full_horizon': True,
+                'discarded_bits_total': sum(max(0.,float(discarded[lid,t].X))*seconds for lid in links),
             },
         })
     return per_slot, {
@@ -149,4 +163,5 @@ def solve_offline(scenario, snapshots, rates_by_slot, capacity_by_link,
         'requested_mip_gap':scenario.config.optimality_gap,
         'optimality_certified': status == GRB.OPTIMAL,
         'offline_objective_served_bits': sum(sum(s['served'].values()) for s in per_slot) * seconds,
+        'offline_discarded_bits_total': sum(sum(s['discarded_bits'].values()) for s in per_slot),
     }

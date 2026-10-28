@@ -1,0 +1,78 @@
+{
+  "ground_stations": [
+    {
+      "id": "gs-1",
+      "name": "Timmins",
+      "lat": 48.4758,
+      "lon": -81.3305,
+      "capacity_bits": 8000000,
+      "n_rx": 1,
+      "n_tx": 1,
+      "yaw_deg": 0
+    },
+    {
+      "id": "gs-2",
+      "name": "Iroquois Falls",
+      "lat": 48.7666,
+      "lon": -80.6826,
+      "capacity_bits": 8000000,
+      "n_rx": 1,
+      "n_tx": 1,
+      "yaw_deg": 0
+    }
+  ],
+  "balloons": [
+    {
+      "id": "hap-1",
+      "name": "Strato-01",
+      "lat": 48.6212,
+      "lon": -81.00655,
+      "altitude_km": 15,
+      "coverage_km": 85,
+      "capacity_bits": 12000000,
+      "n_rx": 1,
+      "n_tx": 1,
+      "yaw_deg": 18
+    }
+  ],
+  "weather_regions": [],
+  "link_overrides": [],
+  "demands": [
+    {
+      "id": "d-1",
+      "source": "gs-1",
+      "target": "gs-2",
+      "rate_bps": 4000,
+      "pattern": "constant",
+      "peak_hour": 12,
+      "second_peak_ratio_pct": 100,
+      "peak_uplift_pct": 80
+    }
+  ],
+  "config": {
+    "slots": 144,
+    "slot_seconds": 600,
+    "base_rate_bps": 36000,
+    "allocation_mode": "optimal",
+    "allocator_seed": 42,
+    "mcr_samples": 3,
+    "optical": {
+      "wavelength_nm": 1550,
+      "beam_waist_m": 0.15,
+      "rx_aperture_down_m": 0.75,
+      "rx_aperture_up_m": 0.4,
+      "obscuration_ratio": 0.3,
+      "cn0": 1e-13,
+      "pointing_error_rad": 1e-7,
+      "tracking_efficiency": 0.85,
+      "detector_efficiency": 0.85,
+      "ao_correction_order": 5,
+      "source_rate_hz": 80000000,
+      "source_efficiency": 0.01,
+      "qber": 0.04
+    },
+    "era5_date": "2024-06-21",
+    "era5_dataset_id": "3dc42073ef98e69faf58",
+    "weather_source": "era5"
+  }
+}
