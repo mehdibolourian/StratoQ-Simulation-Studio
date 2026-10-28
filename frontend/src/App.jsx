@@ -37,7 +37,7 @@ function DemandPreview({ demand, slots, seconds }) {
   const points = sampled.map((value,i)=>`${(i/(n-1||1)*268).toFixed(1)},${(80 - 70*value/peak).toFixed(1)}`).join(' ');
   const area = `0,80 ${points} 268,80`;
   return <div className="demand-preview" aria-label="Demand rate pattern preview">
-    <div className="demand-preview-head"><b>Demand preview</b><span>Mean {fmtRate(demand.rate_bps)} · Peak {fmtRate(peak)}</span></div>
+    <div className="demand-preview-head"><b>Rate profile</b><span>Mean {fmtRate(demand.rate_bps)} · Peak {fmtRate(peak)}</span></div>
     <svg viewBox="0 0 280 100" preserveAspectRatio="none" role="img" aria-label="Requested key rate over simulated time">
       <line x1="6" y1="80" x2="274" y2="80" stroke="#516171" strokeWidth="1"/>
       <polygon points={area} fill="rgba(145,154,190,.16)"/>
@@ -45,7 +45,6 @@ function DemandPreview({ demand, slots, seconds }) {
       <text x="5" y="94" fill="#8f9bad" fontSize="9">0h</text>
       <text x="274" y="94" textAnchor="end" fill="#8f9bad" fontSize="9">{(slots*seconds/3600).toFixed(1)}h</text>
     </svg>
-    <small>Mean is maintained across the simulated horizon; pattern repeats every 24 hours.</small>
   </div>;
 }
 function IconButton({ icon: Icon, label, onClick, active=false, disabled=false }) {
@@ -475,19 +474,20 @@ export default function App() {
   const totalFrames=(!dirty ? result?.frames.length : computedSlots)||computedSlots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
-  return <div className="app-shell" data-ui-build="1.1.4" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+  return <div className="app-shell" data-ui-build="1.1.5" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
     <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
       <div className="panel-resizer resizer-left" onPointerDown={e=>beginResize("left",e)} title="Drag to resize left panel"/>
       <div className="brand-wrap">
-        <div className="brand-symbol"><img className="brand-atom-mark" src="/favicon.svg?v=114" alt="StratoQ three-orbit atom emblem" /></div>
+        <div className="brand-symbol"><img className="brand-atom-mark" src="/favicon.svg?v=115" alt="StratoQ three-orbit atom emblem" /></div>
         <div className="brand-wordmark"><div className="brand-title">Strato<span>Q</span></div><div className="brand-product">SIMULATION STUDIO</div></div>
       </div>
       <div className="side-scroll">
-        <div className="section-pad workspace-section">
-          <div className="eyebrow">WORKSPACE <span className="eyebrow-hint">{experiments.length} EXPERIMENT{experiments.length!==1?'S':''}</span></div>
-          <div className="workspace-current"><span className="project-status"/><strong title={activeExperiment?.name}>{activeExperiment?.name}</strong>
+        <details className="section-pad workspace-section collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Workspace</span><span className="section-summary">{activeExperiment?.name}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
+          <div className="workspace-current"><strong title={activeExperiment?.name}>{activeExperiment?.name}</strong>
             <button className="workspace-rename" onClick={()=>renameExperiment(activeId)} title="Rename experiment" aria-label="Rename experiment"><Pencil size={13}/></button></div>
           <div className="workspace-actions"><button onClick={createExperiment}><Plus size={13}/> New</button>
             <button onClick={duplicateExperiment} title="Duplicate current experiment"><Copy size={13}/> Duplicate</button></div>
@@ -497,21 +497,23 @@ export default function App() {
               <button className="tab-close" aria-label={`Close ${e.name}`} onClick={()=>closeExperiment(e.id)}><X size={12}/></button>
             </div>)}
           </div>
-          <p className="workspace-note">Experiments auto-save locally in this browser. Export a workspace file for reliable backup.</p>
-        </div>
+        </div></details>
         <div className="side-divider"/>
-        <section className="section-pad">
-          <GroupTitle extra={<span className="section-mini">EDIT</span>}>NETWORK ELEMENTS</GroupTitle>
+        <details className="section-pad collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Network elements</span><span className="section-summary">{scenario.ground_stations.length + scenario.balloons.length + scenario.demands.length + scenario.weather_regions.length} items</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <div className="add-list">
             <ButtonRow icon={SatelliteDish} text="Ground stations" count={scenario.ground_stations.length} onClick={()=>add('gs')} accent="aqua"/>
             <ButtonRow icon={RadioTower} text="HAP balloons" count={scenario.balloons.length} onClick={()=>add('hap')} accent="amber"/>
             <ButtonRow icon={Cloud} text="Weather regions" count={scenario.weather_regions.length} onClick={()=>add('weather')} accent="violet"/>
             <ButtonRow icon={Activity} text="Traffic demands" count={scenario.demands.length} onClick={()=>add('demand')} accent="lime"/>
           </div>
-        </section>
+          </div>
+        </details>
         <div className="side-divider"/>
-        <section className="section-pad era5-panel">
-          <GroupTitle><CalendarDays size={13}/> HISTORICAL WEATHER · ERA5</GroupTitle>
+        <details className="section-pad collapsible-block era5-panel">
+          <summary className="collapsible-heading"><span className="section-heading-label">Weather · ERA5</span><span className="section-summary">{useEra5 ? "Enabled" : "Off"}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <label className="era5-switch"><input type="checkbox" checked={useEra5} onChange={e=>toggleEra5(e.target.checked)}/>
             <span>Use ERA5 historical weather</span></label>
           <label className="era5-date-label"><span>Date (UTC)</span>
@@ -536,11 +538,12 @@ export default function App() {
             </>}
           </div>}
           {scenario.config.era5_dataset_id && <small className="era5-loaded">{useEra5?'● Historical mode active':'○ ERA5 loaded, paused'} · {era5Date}</small>}
-          <p className="era5-help">ERA5 reanalysis via Open-Meteo (no CDS queue or API key). 0.25° grid, UTC; snow uses Open-Meteo’s fixed snow-to-water conversion. Manual weather remains additive; fog is a proxy.</p>
-        </section>
+          </div>
+        </details>
         <div className="side-divider"/>
-        <section className="section-pad">
-          <GroupTitle>SCENE OBJECTS</GroupTitle>
+        <details className="section-pad collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Scene objects</span><span className="section-summary">{selected ? (selected.name || selected.id) : "Select an object"}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <div className="object-list">
             {scenario.balloons.map(h=><EntityItem key={h.id} item={h} icon={RadioTower} subtitle={`${h.altitude_km} km · ${h.coverage_km} km range`}
               selected={selectedId===h.id} onClick={()=>setSelectedId(h.id)} />)}
@@ -550,12 +553,13 @@ export default function App() {
             {scenario.demands.map(d=><EntityItem key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
               subtitle={`${fmtRate(d.rate_bps)} mean · ${d.pattern||"constant"}`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
           </div>
-        </section>
+          </div>
+        </details>
       </div>
       <div className="left-bottom">
         <button className="primary-button" onClick={()=>runSim()} disabled={running}>
           {running ? <RefreshCcw size={17} className="spin"/> : <Play size={17} fill="currentColor" />}
-          {running?'Computing physical rates…':'Run simulation'} <ArrowRight size={16}/>
+          {running?'Computing…':'Run simulation'} <ArrowRight size={16}/>
         </button>
         {running && physicsProgress && <div className="physics-progress" role="status" aria-live="polite">
           <div className="physics-progress-meta"><b>{physicsProgress.stage==='channel'?'Calculating upstream channel':physicsProgress.stage==='era5-sampling'?'Sampling ERA5 weather along links…':'Preparing physical setup…'}</b>
@@ -563,11 +567,8 @@ export default function App() {
           <div className="physics-progress-track"><div style={{width:`${physicsProgress.total?Math.min(100,100*physicsProgress.completed/physicsProgress.total):3}%`}} /></div>
           <small>{physicsProgress.cached||0} reused · {physicsProgress.computed||0} computed · {physicsProgress.workers||0} workers</small>
         </div>}
-        {!running && !dirty && physicsProgress?.stage==='complete' && <div className="physics-last-run">
-          <Check size={12}/> Upstream physics · {physicsProgress.computed||0} calculated · {physicsProgress.cached||0} cached
-        </div>}
         <div className="run-hint"><span className={`status-pin ${backend}`} />
-          {backend==='online'?'Upstream balloon_qnet backend connected':backend==='checking'?'Connecting to local API…':'Backend offline — see README'}
+          {backend==='online'?'Backend connected':backend==='checking'?'Connecting…':'Backend unavailable'}
         </div>
       </div>
     </aside>
@@ -576,19 +577,21 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-identity"><button className="panel-toggle" onClick={()=>setLeftOpen(v=>!v)} title={leftOpen?'Collapse workspace':'Expand workspace'}>{leftOpen?<PanelLeftClose size={18}/>:<PanelLeftOpen size={18}/>}</button><span className="topbar-current">{activeExperiment?.name}</span></div>
         <div className="topbar-right">
-          <Chip accent="demo">STRATOQ · {STUDIO_VERSION} · UI 1.1.3</Chip>
-          <button className="header-text-button" onClick={()=>downloadJSON('stratoq-experiment.json',scenario)}><ArrowDownToLine size={15}/> Export experiment</button>
-          <button className="header-text-button" onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={15}/> Import</button>
-          <button className="header-text-button workspace-export" onClick={exportWorkspace}><ArrowDownToLine size={15}/> Export workspace</button>
+          <details className="header-file-menu">
+            <summary>Files <ChevronDown size={14}/></summary>
+            <div className="header-file-options">
+              <button onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={14}/> Import experiment / workspace</button>
+              <button onClick={()=>downloadJSON('stratoq-experiment.json',scenario)}><ArrowDownToLine size={14}/> Export experiment</button>
+              <button onClick={exportWorkspace}><ArrowDownToLine size={14}/> Export workspace</button>
+            </div>
+          </details>
           <button className="panel-toggle" onClick={()=>setRightOpen(v=>!v)} title={rightOpen?'Collapse inspector':'Expand inspector'}>{rightOpen?<PanelRightClose size={18}/>:<PanelRightOpen size={18}/>}</button>
         </div>
       </header>
       <div className="stage-shell">
         <div className="stage-top">
           <div>
-            <div className="stage-overline"><span className="live-light" /> INTERACTIVE NETWORK ENVIRONMENT</div>
-            <h1>Network topology <span className="h1-mark">/ {mode==='3d'?'3D space':'geographic map'}</span></h1>
-            <p>Explore optical links and key-buffer dynamics in a balloon-assisted QKD network.</p>
+            <h1>Network <span className="h1-mark">{mode==='3d'?'· 3D':'· Map'}</span></h1>
           </div>
           <div className="view-toggle"><button className={mode==='3d'?'active':''} onClick={()=>setMode('3d')}><Box size={16}/> 3D scene</button>
             <button className={mode==='map'?'active':''} onClick={()=>setMode('map')}><Map size={16}/> Map view</button></div>
@@ -598,9 +601,6 @@ export default function App() {
             {mode==='3d' ? <Network3D key={sceneKey} scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId}
               onSelect={setSelectedId} dragMode={dragMode} onPositionChange={onPositionChange} autoRotate={autoRotate} />
               : <GeoMap scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId} onSelect={setSelectedId} onPositionChange={onPositionChange} />}
-          </div>
-          <div className="scene-corner top-left">
-            <div className="floating-label"><span className="floating-dot"/> NETWORK LIVE VIEW <span className="light-divider">/</span> {mode==='3d'?'LOCAL XYZ':'WGS84'}</div>
           </div>
           <div className="scene-corner top-right">
             <div className="toolbox">
@@ -615,7 +615,6 @@ export default function App() {
           </div>
           {mode==='3d' && <div className="scene-corner bottom-left">
             <div className="visual-legend"><span><i className="legend-mark optical-live"/> Optical generation</span><span><i className="legend-mark qkp-live"/> Stored-key flow</span><span><i className="legend-mark link"/> Idle optical link</span>{currentFrame && <span className="legend-live-count">{activeLinks} optical · {qkpOnlyLinks} QKP · {currentFrame.links.length-activeLinks-qkpOnlyLinks} idle</span>}</div>
-            <div className="scene-instructions">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> {dragMode?'Drag any object to move':'Drag weather directly · Move tool for GS/HAP'}</div>
           </div>}
           {running&&physicsProgress&&<div className="scene-corner bottom-right"><div className="pending-indicator">Physical model · {physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'preparing'} · {physicsProgress.cached||0} cached</div></div>}
           {dirty&&!running&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
@@ -639,30 +638,19 @@ export default function App() {
             value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);}}
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
             <span>{toClock(totalFrames*scenario.config.slot_seconds)}</span></div>
-          <div className="timeline-footer"><span><span className="timeline-dot aqua"/> Link state</span><span><span className="timeline-dot purple"/> QKP buffers</span>
-            <span className="timeline-note">Frame {frameIndex+1} of {totalFrames}{useEra5?` · ${historicalRegions.length} ERA5 cells shown · ${scenario.weather_regions.length} manual`:''}{dirty?' · press Play to update':''}</span></div>
+          <div className="timeline-footer"><span className="timeline-note">Frame {frameIndex+1} / {totalFrames}{dirty?' · changes pending':''}</span></div>
         </div>
       </div>
     </main>
 
     <aside className={`right-panel ${rightOpen?"":"is-collapsed"}`}>
       <div className="panel-resizer resizer-right" onPointerDown={e=>beginResize("right",e)} title="Drag to resize inspector"/>
-      <div className="inspector-top"><div><span className="tiny-overline">CONTROL CENTER</span><h2>Inspector <SlidersHorizontal size={17}/></h2></div>
+      <div className="inspector-top"><div><h2>Inspector</h2></div>
         <IconButton icon={ArrowDownToLine} label="Export simulation results" onClick={()=>result&&downloadJSON('stratoq-results.json',result)} disabled={!result}/></div>
-      {selectedType==='weather' && selected && <div className="weather-quick-controls">
-        <div className="weather-quick-heading"><strong>WEATHER TYPE</strong><span>Drag zone directly to move</span></div>
-        <div className="weather-type-options" role="group" aria-label="Weather effect">
-          {[['fog','☁','Fog / cloud'],['rain','☂','Rain'],['snow','❄','Snow']].map(([value, icon, label]) =>
-            <button key={value} type="button" aria-pressed={(selected.effect||'fog')===value}
-              className={(selected.effect||'fog')===value?'active':''}
-              onClick={()=>modifyItem(selected.id,'effect',value)}>
-              <span aria-hidden="true">{icon}</span>{label}
-            </button>)}
-        </div>
-      </div>}
       <div className="inspector-scroll">
-        <div className="inspector-section">
-          <GroupTitle>NETWORK PERFORMANCE <span className="metrics-caption">SLOT {frameIndex+1}</span></GroupTitle>
+        <details className="inspector-section collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Performance</span><span className="section-summary">{solverSummary ? `${Number(100*(solverSummary.total_satisfaction??0)).toFixed(1)}% served` : `Slot ${frameIndex+1}`}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <div className="kpi-grid">
             <div className="kpi-card"><div className="kpi-label"><Activity size={14}/> Served rate</div><b>{fmtRate(served)}</b><small>{satisfaction===null?'—':`${satisfaction}% of requested`}</small></div>
             <div className="kpi-card"><div className="kpi-label"><Wifi size={14}/> Optical / QKP</div><b>{currentFrame?`${activeLinks} / ${qkpOnlyLinks}`:'—'}</b><small>Fresh generation / stored-key-only links</small></div>
@@ -677,7 +665,7 @@ export default function App() {
               <div className="solver-total-coverage"><small>Overall served / requested</small><strong>{Number(100*(solverSummary.total_satisfaction??0)).toFixed(1)}%</strong></div>
             </div>}
             {solverSummary?.algorithm==='optimal' && <p className="offline-gap-note">Achieved gap: {Number(100*(solverSummary.achieved_mip_gap??0)).toFixed(2)}% · Requested ≤ {Number(100*(solverSummary.requested_mip_gap??0.01)).toFixed(2)}% · {solverSummary.optimality_certified?'Gap target certified':'Incumbent; not certified optimal'}</p>}
-            <div className="solver-audit-stats">
+            <details className="solver-detail-disclosure"><summary>Solver details <ChevronDown size={13}/></summary><div className="solver-audit-stats">
               <span>Models optimized <b>{slotSolver.offline_full_horizon ? 1 : slotSolver.candidate_solves}</b></span>
               <span>Solver time <b>{Number(slotSolver.offline_full_horizon ? solverSummary?.gurobi_runtime_seconds : slotSolver.gurobi_runtime_seconds||0).toFixed(4)} s</b></span>
               <span>Selected routes <b>{slotSolver.selected_paths}</b></span>
@@ -686,11 +674,12 @@ export default function App() {
               <span>Variables / constraints <b>{slotSolver.gurobi_variable_count} / {slotSolver.gurobi_constraint_count}</b></span>
             </div>
             <div className={`solver-audit-note ${!slotSolver.activated_links?'inactive':''}`}>{slotSolver.selection_note}</div>
-            <small className="solver-audit-footer">Gurobi {slotSolver.gurobi_version} · {solverSummary?.gurobi_optimized_models??0} total optimized models · {Number(solverSummary?.gurobi_runtime_seconds||0).toFixed(4)} s cumulative solver time</small>
-          </div> : <div className="metric-notice"><Sparkles size={15}/><span>Run the simulation to see actual Gurobi solve counts and per-slot activated optical links. A fast result can reflect cached channel rates or an empty route set.</span></div>}
-        </div>
-        <div className="inspector-section">
-          <GroupTitle>SELECTED OBJECT {selected && <Chip accent={selectedType==='hap'?'warm':'neutral'}>{selectedType.toUpperCase()}</Chip>}</GroupTitle>
+            <small className="solver-audit-footer">Gurobi {slotSolver.gurobi_version} · {solverSummary?.gurobi_optimized_models??0} solves</small></details>
+          </div> : <div className="compact-note">Run to view allocation results.</div>}
+        </div></details>
+        <details className="inspector-section collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Selected object</span><span className="section-summary">{selected ? (selected.name || selected.id) : 'None'}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           {selected ? <>
             <div className="object-hero"><div className={`object-avatar ${selectedType}`}>
               {selectedType==='hap'?<RadioTower size={24}/>:selectedType==='gs'?<SatelliteDish size={24}/>:selectedType==='weather'?<Cloud size={24}/>:selectedType==='link'?<Wifi size={24}/>:<Activity size={24}/>}</div>
@@ -709,11 +698,9 @@ export default function App() {
               <div className="selection-stat"><span>Weather (fog/rain/snow)</span><b>{(selected.weather_flags||[0,0,0]).join(' / ')}</b></div>
               <div className="selection-stat"><span>Capacity</span><b>{!dirty?fmtRate(selected.capacity_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Used by demands</span><b>{!dirty?fmtRate(selected.used_bps):'Run to update'}</b></div>
-              {!dirty && <p className="field-help">{selected.activated ? 'GOLD: Optical generation enabled on this GS–HAP link.' : selected.allocated ? 'AMBER: This GS–HAP link carries keys from existing QKP storage only.' : 'BLUE: No key traffic is assigned to this link in the selected time slot.'}</p>}
               <div className="selection-stat"><span>Slant distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
               <div className="selection-stat"><span>GS elevation</span><b>{Number.isFinite(selected.elevation_deg) ? `${selected.elevation_deg.toFixed(1)}°` : 'Run to update'}</b></div>
               <div className="selection-stat"><span>Weather attenuation</span><b>{Number.isFinite(selected.weather_loss_db) ? `${selected.weather_loss_db.toFixed(1)} dB` : 'Run to update'}</b></div>
-              <p className="field-help">Manual failures override physical availability. Click Run StratoQ to reroute demands.</p>
             </div> : selectedType==='demand' ? <div className="field-stack">
               <label className="field-label"><span>Source station</span><select value={selected.source} onChange={e=>modifyItem(selected.id,'source',e.target.value)}>
                 {scenario.ground_stations.filter(g=>g.id!==selected.target).map(g=><option key={g.id} value={g.id}>{g.name}</option>)}</select></label>
@@ -753,7 +740,10 @@ export default function App() {
                 <input type="range" min={-180} max={180} step={1} value={selected.yaw_deg||0}
                   onChange={e=>modifyItem(selected.id,'yaw_deg',Number(e.target.value))} /></label>}
 
-              {selectedType==='weather'&&<p className="field-help">Drag the region or its center handle directly in 3D, or drag the region or marker on the map. Play recalculates weather flags for each HAP and link at each slot.</p>}
+              {selectedType==='weather' && <label className="field-label"><span>Weather type</span>
+                <select value={selected.effect||'fog'} onChange={e=>modifyItem(selected.id,'effect',e.target.value)}>
+                  <option value="fog">Fog / cloud</option><option value="rain">Rain</option><option value="snow">Snow</option>
+                </select></label>}
               {selectedType==='weather' && <div className="weather-intensity-control">
                 <strong>{selected.effect==='fog'?'Fog density / visibility':selected.effect==='snow'?'Snowfall rate (water equivalent)':'Rainfall rate'}</strong>
                 <div className="field-grid">
@@ -763,7 +753,7 @@ export default function App() {
                   <select value={selected.snow_type||'wet'} onChange={e=>modifyItem(selected.id,'snow_type',e.target.value)}>
                     <option value="wet">Wet snow</option><option value="dry">Dry snow</option>
                   </select></label>}
-                <p className="field-help">{selected.effect==='fog'?'Lower visibility means denser fog.':'Higher rate increases atmospheric loss and particle density. Snow uses liquid-water equivalent mm/h.'} The rate-to-attenuation scaling is approximate; see WEATHER-INTENSITY-V09.md.</p>
+
               </div>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
                 <Numeric label="Optional extra loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
@@ -781,38 +771,39 @@ export default function App() {
               {selectedType==='gs' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.source===selected.id).length}</b></div>}
               {selectedType==='gs' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.source===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.source===selected.id&&l.allocated&&!l.activated).length}</b></div>}
             </div>}
-          </>:<div className="empty-selection"><MousePointer2 size={25}/><span>Choose an object in the scene to inspect its parameters.</span></div>}
-        </div>
-        <div className="inspector-section">
-          <GroupTitle>SIMULATION CONFIG</GroupTitle>
-          {useEra5 && <p className="field-help">Historical ERA5 date: {era5Date} UTC. At most 24 h; changing the time slot resamples the same hourly dataset. Manual regions add to ERA5 attenuation. ERA5 animation shows up to 75 visual cells; link physics samples the full grid.</p>}
+          </>:<div className="empty-selection"><MousePointer2 size={20}/><span>Select an object in the scene.</span></div>}
+          </div>
+        </details>
+        <details className="inspector-section collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Simulation</span><span className="section-summary">{(scenario.config.allocation_mode||'scar_q').toUpperCase()} · {scenario.config.slot_seconds}s</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <div className="field-grid"><label className="field-label"><span>Time slots · calculated</span><div className="number-shell"><strong>{computedSlots.toLocaleString()}</strong></div></label>
             <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={10} max={86400} step={10} onChange={v=>patchScenario(s=>{s.config.slot_seconds=Math.max(10,v);s.config.slots=slotCount(s);})} /></div>
-          <p className="field-help">Horizon: {horizonHours.toFixed(2)} h ({scenario.balloons.some(h=>h.trajectory_id)?'shortest uploaded trajectory':'24-hour default'}). 10s / 30s intervals require thousands of slots and substantial computation.</p>
+          <div className="compact-note">{horizonHours.toFixed(1)}h · {scenario.balloons.some(h=>h.trajectory_id)?'trajectory':'24h default'}</div>
           <div className="allocator-picker">
             <label className="field-label"><span>Resource allocation algorithm</span>
               <select value={['scar_q','mcr_q','optimal'].includes(scenario.config.allocation_mode) ? scenario.config.allocation_mode : 'scar_q'}
                 onChange={e=>patchScenario(s=>s.config.allocation_mode=e.target.value)}>
-                <option value="scar_q">SCAR-Q · Scarcity &amp; contention</option>
-                <option value="mcr_q">MCR-Q · Monte Carlo routing</option><option value="optimal">Optimal · Full-horizon MILP</option>
+                <option value="scar_q">SCAR-Q · Greedy</option>
+                <option value="mcr_q">MCR-Q · Monte Carlo</option><option value="optimal">Optimal · MILP</option>
               </select>
             </label>
-            <p className="field-help">SCAR-Q greedily prioritizes scarce demands and less-contended paths (one Gurobi solve per slot). MCR-Q samples randomized path assignments, solves one Gurobi key-flow LP per sample, and retains the candidate serving the most keys. Both carry QKP storage across slots. Optimal solves a single full-horizon MILP, maximizing served keys with global QKP carryover.</p>
-            {scenario.config.allocation_mode === 'mcr_q' && <div className="field-grid">
+              {scenario.config.allocation_mode === 'mcr_q' && <div className="field-grid">
               <Numeric label="Monte Carlo samples" value={scenario.config.mcr_samples ?? 3} min={1} max={100} step={1} onChange={v=>patchScenario(s=>s.config.mcr_samples=Math.max(1,Math.min(100,Math.round(v))))} />
               <Numeric label="Random seed" value={scenario.config.allocator_seed ?? 42} min={0} max={2147483647} step={1} onChange={v=>patchScenario(s=>s.config.allocator_seed=Math.max(0,Math.round(v)))} />
             </div>}
-            {scenario.config.allocation_mode === 'mcr_q' && <p className="field-help">Default: 3 Monte Carlo candidates per slot, as in the reference notebook. More samples mean more Gurobi solves. The seed makes repeated simulations reproducible.</p>}
             {scenario.config.allocation_mode === 'optimal' && <>
               <div className="field-grid">
                 <Numeric label="Optimality gap" value={100*(scenario.config.optimality_gap??0.01)} unit="%" min={0} max={50} step={0.1} onChange={v=>patchScenario(s=>s.config.optimality_gap=Math.max(0,Math.min(50,v))/100)}/>
                 <Numeric label="Time limit" value={scenario.config.optimal_time_limit_seconds??300} unit="sec" min={1} max={86400} step={1} onChange={v=>patchScenario(s=>s.config.optimal_time_limit_seconds=Math.max(1,Math.round(v)))}/>
               </div>
-              <p className="field-help">Full-horizon integer optimization can be expensive. If the time limit is reached, the UI reports the incumbent and achieved gap—not an optimality guarantee. For large simulations, compare heuristics first.</p>
             </>}
-            <div className="allocation-legend"><span><i className="legend-activated"/> Moving gold: optical generation</span><span><i className="legend-stored"/> Moving amber: QKP-only use</span><span><i className="legend-idle"/> Muted: available but idle</span></div>
           </div>
-          <div className="inspector-subsection-heading"><GroupTitle>PHYSICAL CHANNEL · UPSTREAM THEORY</GroupTitle></div>
+          </div>
+        </details>
+        <details className="inspector-section collapsible-block">
+          <summary className="collapsible-heading"><span className="section-heading-label">Physical channel</span><span className="section-summary">Optical parameters</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
           <div className="field-grid">
             <Numeric label="Wavelength" value={scenario.config.optical.wavelength_nm} unit="nm" min={300} onChange={v=>patchScenario(s=>s.config.optical.wavelength_nm=v)}/>
             <Numeric label="Beam waist" value={scenario.config.optical.beam_waist_m} unit="m" min={0.001} onChange={v=>patchScenario(s=>s.config.optical.beam_waist_m=v)}/>
@@ -830,15 +821,17 @@ export default function App() {
             <Numeric label="Tracking efficiency" value={scenario.config.optical.tracking_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.tracking_efficiency=v)}/>
             <Numeric label="Detection efficiency" value={scenario.config.optical.detector_efficiency} min={0} max={1} onChange={v=>patchScenario(s=>s.config.optical.detector_efficiency=v)}/>
           </div>
-          <p className="field-help">Link capacities come from upstream balloon_qnet channel_theory (LOWTRAN + AO/turbulence) and BB84 secret-key equations. SCAR-Q uses greedy path selection; MCR-Q uses random path sampling evaluated by Gurobi. Gurobi solves each heuristic allocation LP; Optimal solves one horizon-wide MILP. Unchanged physical evaluations are cached.</p>
-        </div>
-        <div className="inspector-section last"><GroupTitle>API ENGINE</GroupTitle>
-          <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong><small>{backend==='online'?'Connection healthy':backend==='checking'?'Checking connection':'Not connected'}</small></div><span className="api-tag">{backend.toUpperCase()}</span></div>
+          </div>
+        </details>
+        <details className="inspector-section collapsible-block last">
+          <summary className="collapsible-heading"><span className="section-heading-label">System</span><span className="section-summary">{backend==='online'?'Connected':backend==='checking'?'Connecting':'Offline'}</span><ChevronDown size={15}/></summary>
+          <div className="collapsible-content">
+          <div className="api-line"><span className={`api-light ${backend}`}/><div><strong>FastAPI · localhost:8000</strong></div></div>
           {physicsStatus && <p className="field-help">Original channel: {physicsStatus.channel_import_ok?'import OK':'import failed'} · LOWTRAN native: {physicsStatus.native_lowtran_present?'installed':'will build on first run / requires build tools'}</p>}
-          <button className="secondary-button" onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={15}/> Import experiment / workspace JSON</button>
-        </div>
+          </div>
+        </details>
       </div>
-      <div className="right-footer"><div className="waterloo-credit"><a className="waterloo-logo-link" href="https://uwaterloo.ca/" target="_blank" rel="noreferrer" aria-label="University of Waterloo"><img className="waterloo-logo-full" src="https://uwaterloo.ca/brand/sites/ca.brand/files/universityofwaterloo_logo_horiz_rev.png" alt="University of Waterloo" loading="lazy" /></a><span>Developed at the <a className="lab-link" href="https://rboutaba-cs.github.io/watqkd/" target="_blank" rel="noreferrer">Networks Lab</a><small>University of Waterloo</small></span></div></div>
+      <div className="right-footer"><div className="waterloo-credit"><a className="waterloo-logo-link" href="https://uwaterloo.ca/" target="_blank" rel="noreferrer" aria-label="University of Waterloo"><img className="waterloo-logo-full" src="https://uwaterloo.ca/brand/sites/ca.brand/files/universityofwaterloo_logo_horiz_rev.png" alt="University of Waterloo" loading="lazy" /></a><span>Developed at the <a className="lab-link" href="https://rboutaba-cs.github.io/watqkd/" target="_blank" rel="noreferrer">Networks Lab</a></span></div></div>
     </aside>
   </div>;
 }
