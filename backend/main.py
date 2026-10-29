@@ -126,6 +126,20 @@ async def upload_era5(date_utc: str = Form(...),file: UploadFile = File(...)):
         raise HTTPException(400,str(exc))
 
 
+@app.get('/api/era5/datasets/{dataset_id}/metadata')
+def era5_dataset_metadata(dataset_id: str, date_utc: str):
+    """Confirm a saved ERA5 identifier is usable after a server restart.
+
+    The frontend may offer a fresh Open-Meteo retrieval only if this exact
+    dataset cannot be restored from the persisted cache. Never return
+    synthetic weather or substitute a different file for a missing ID.
+    """
+    try:
+        return get_cube(dataset_id, date_utc).metadata()
+    except (ValueError, KeyError, OSError) as exc:
+        raise HTTPException(404, f'Cached ERA5 data unavailable: {exc}')
+
+
 @app.get('/api/era5/datasets/{dataset_id}/frame')
 def era5_frame(dataset_id: str,date_utc: str,slot_seconds: int=300,slot: int=0):
     if slot_seconds<1 or slot_seconds>86400 or slot<0 or slot*slot_seconds>=86400:

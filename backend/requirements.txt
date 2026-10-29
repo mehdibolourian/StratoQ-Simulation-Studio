@@ -20,3 +20,6 @@ xarray>=2023.1
 # cdsapi is optional for older standalone scripts; no longer used by the Studio UI.
 # ERA5 CDS NetCDF may be NetCDF4/HDF5; scipy backend supports classic NetCDF.
 netCDF4>=1.6,<2
+
+# Solver for SCAR-Q, MCR-Q, and the full-horizon offline MILP.
+gurobipy>=11,<14

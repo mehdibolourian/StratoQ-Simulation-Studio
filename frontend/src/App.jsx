@@ -410,17 +410,61 @@ export default function App() {
     if(enabled && !scenario.config.era5_dataset_id){setError('Load a historical ERA5 dataset before enabling historical weather.');return;}
     patchScenario(s=>{s.config.weather_source=enabled?'era5':'manual';if(enabled)s.config.slots=slotCount(s);});
   }
+  async function restoreWeatherBeforeRun(caseInput, runId) {
+    if (caseInput.config.weather_source !== 'era5') return caseInput;
+    const day = caseInput.config.era5_date;
+    if (!day) throw new Error('Select a historical UTC date before running with ERA5.');
+    const oldId = caseInput.config.era5_dataset_id;
+    if (oldId) {
+      const lookup = await fetch(`/api/era5/datasets/${encodeURIComponent(oldId)}/metadata?date_utc=${encodeURIComponent(day)}`, {cache:'no-store'});
+      if (lookup.ok) return caseInput; // exact saved dataset was restored from disk
+      if (lookup.status !== 404) {
+        const details = await lookup.json().catch(()=>null);
+        throw new Error(details?.detail || `Unable to validate saved ERA5 dataset: HTTP ${lookup.status}`);
+      }
+    }
+    // The original cache file is unavailable. Retrieve the requested real ERA5
+    // data from Open-Meteo, showing progress, without approximating weather.
+    // This can take time on a cold start; completed grid batches are cached.
+    setEra5Loading(true);
+    setEra5Job({status:'running', stage:`Restoring ERA5 ${day} from Open-Meteo…`});
+    try {
+      const response=await fetch('/api/open-meteo/jobs', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({date_utc:day, scenario:caseInput})});
+      const job=await response.json().catch(()=>null);
+      if(!response.ok)throw new Error(job?.detail || `Open-Meteo retrieval HTTP ${response.status}`);
+      let state=job;
+      while(runId===requestId.current && (state.status==='queued' || state.status==='running')) {
+        await new Promise(resolve=>setTimeout(resolve,1700));
+        const progress=await fetch(`/api/open-meteo/jobs/${job.id}`, {cache:'no-store'});
+        if(!progress.ok)throw new Error(`Open-Meteo retrieval interrupted (HTTP ${progress.status}); retry the simulation.`);
+        state=await progress.json();
+        if(runId===requestId.current)setEra5Job(state);
+      }
+      if(runId!==requestId.current)return null;
+      if(state.status!=='complete' || !state.dataset?.dataset_id)
+        throw new Error(state.error || 'Open-Meteo could not restore the selected ERA5 date.');
+      const recovered=clone(caseInput);
+      recovered.config.era5_dataset_id=state.dataset.dataset_id;
+      // Keep the saved experiment in sync with the newly downloaded dataset ID.
+      setScenario(prev => prev.config.era5_dataset_id===oldId && prev.config.era5_date===day
+        ? {...prev, config:{...prev.config,era5_dataset_id:state.dataset.dataset_id}} : prev);
+      setEra5Preview([]);setEra5Meta(state.dataset);
+      setEra5Job({status:'complete',stage:'ERA5 restored from Open-Meteo',dataset:state.dataset});
+      return recovered;
+    } finally {if(runId===requestId.current)setEra5Loading(false);}
+  }
+
   async function runSim(caseInput=scenario, {silent=false, autoPlay=false}={}) {
     const id=++requestId.current;
-    if(caseInput.config.weather_source==='era5' && !caseInput.config.era5_dataset_id){
-      setError('Load ERA5 historical weather first, or switch back to Manual only.');return;
-    }
     setRunning(true);setError('');setPlaying(false);
     setPhysicsProgress({stage:'queued',completed:0,total:0,cached:0,computed:0});
     try {
       // The real upstream LOWTRAN + turbulence/AO channel can take minutes on
       // larger topologies; start a monitored backend job instead of blocking UI.
-      const response=await fetch('/api/simulations', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(caseInput)});
+      const readyCase=await restoreWeatherBeforeRun(caseInput,id);
+      if(id!==requestId.current || !readyCase)return;
+      const response=await fetch('/api/simulations', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(readyCase)});
       const body=await response.json().catch(()=>null);
       if(!response.ok)throw new Error(body?.detail ? JSON.stringify(body.detail).slice(0,300):`HTTP ${response.status}`);
       const jid=body.id;
