@@ -1,0 +1,5990 @@
+{
+  "episode": 20,
+  "summary": {
+    "reward": 0.4263825658192135,
+    "satisfaction": 0.41164036881121596,
+    "served_bits": 20450293.52254121,
+    "requested_bits": 49680000.0
+  },
+  "frames": [
+    {
+      "slot": 0,
+      "time_seconds": 0,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4338912.6,
+          "used_bps": 2724.75,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1143921.0,
+          "used_bps": 2724.75,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 5000000.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2600.0,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2695.845067392593,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2724.748830585055,
+          "served_bps": 2724.75,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": -0.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": -4.9112713895738125e-18
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 4338912.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.43389125554823504
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 6143921.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.6143920955101914
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 5482833.5,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.3046018616991258
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 5000000.0,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.2777777777777778
+        }
+      ],
+      "stored_bits_total": 10482833.5,
+      "served_bps_total": 5352.33,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.65823
+      }
+    },
+    {
+      "slot": 1,
+      "time_seconds": 300,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 2791.69,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4338912.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 306414.5,
+          "used_bps": 2791.69,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 5000000.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2801.878855179966,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2791.6882534496767,
+          "served_bps": 2791.69,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2682.452162748419,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 4338912.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.43389125554823504
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 5306414.5,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.5306414479067011
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 9105988.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.505888259517188
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 5000000.0,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.2777777777777778
+        }
+      ],
+      "stored_bits_total": 14105988.7,
+      "served_bps_total": 2791.69,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 2,
+      "time_seconds": 600,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3558773.9,
+          "used_bps": 2600.46,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1487621.4,
+          "used_bps": 2600.46,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4211726.3,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2989.9999999999995,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2847.2088628452366,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2600.462342568188,
+          "served_bps": 2600.46,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 3558773.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.3558773852711894
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 5699347.7,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.5699347662364581
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 9507056.9,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.5281698261136613
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 4211726.3,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.23398479343281098
+        }
+      ],
+      "stored_bits_total": 13718783.2,
+      "served_bps_total": 5228.04,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.64095
+      }
+    },
+    {
+      "slot": 3,
+      "time_seconds": 900,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 2813463.8,
+          "used_bps": 2484.37,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 742311.3,
+          "used_bps": 2484.37,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3423452.6,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3151.543289325507,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2858.62325780111,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2484.3668407950604,
+          "served_bps": 2484.37,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 2813463.8,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.28134638004733764
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 4165763.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4165763891916661
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 8016436.8,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.4453575980871592
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 3423452.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.19019180908784414
+        }
+      ],
+      "stored_bits_total": 11439889.3,
+      "served_bps_total": 5111.95,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.63973
+      }
+    },
+    {
+      "slot": 4,
+      "time_seconds": 1200,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 2110840.6,
+          "used_bps": 2342.08,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 39688.1,
+          "used_bps": 2342.08,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 2635178.8,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3275.499814951862,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2825.153566164234,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2342.077374017987,
+          "served_bps": 2342.08,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 2110840.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.211084058826798
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 2674867.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.2674866961501862
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 6611190.3,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.36728835228655965
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 2635178.8,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.14639882474287733
+        }
+      ],
+      "stored_bits_total": 9246369.2,
+      "served_bps_total": 4969.66,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.64336
+      }
+    },
+    {
+      "slot": 5,
+      "time_seconds": 1500,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1455853.4,
+          "used_bps": 2183.29,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1346046.5,
+          "used_bps": 2183.29,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1846905.1,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3353.422144505473,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2749.0806921083804,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2183.290734253363,
+          "served_bps": 2183.29,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 1455853.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.14558533679919713
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 3192951.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.3192951627293881
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 7262561.5,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.4034756391601937
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 1846905.1,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.10260584039791053
+        }
+      ],
+      "stored_bits_total": 9109466.6,
+      "served_bps_total": 4810.87,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.65193
+      }
+    },
+    {
+      "slot": 6,
+      "time_seconds": 1800,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": -0.0,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 850205.0,
+          "used_bps": 2018.83,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 740398.1,
+          "used_bps": 2018.83,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1058631.4,
+          "used_bps": 2627.58,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3380.0,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2635.588876284088,
+          "served_bps": 2627.58,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "partial"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2018.8279685938194,
+          "served_bps": 2018.83,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4460661.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4460661636760023
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 850205.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.08502049774138254
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1799029.5,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.17990295185063326
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 6051264.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.3361813735403997
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 1058631.4,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.058812856052943716
+        }
+      ],
+      "stored_bits_total": 7109896.1,
+      "served_bps_total": 4646.41,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.66565
+      }
+    },
+    {
+      "slot": 7,
+      "time_seconds": 2100,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4460661.6,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 2492.41,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 1859.9,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 182429.0,
+          "used_bps": 1859.9,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 2492.41,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3353.422144505473,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2492.412398385689,
+          "served_bps": 2492.41,
+          "path": [
+            "gs-cochrane",
+            "hap-5",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1859.8969427314823,
+          "served_bps": 1859.9,
+          "path": [
+            "gs-iroquois",
+            "hap-2",
+            "gs-cochrane"
+          ],
+          "status": "served"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4501211.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.45012116354537196
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 493336.7,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.049333671617118144
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 4935326.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.27418480878268364
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 5286784.2,
+      "served_bps_total": 4352.31,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.66667
+      }
+    },
+    {
+      "slot": 8,
+      "time_seconds": 2400,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3761869.1,
+          "used_bps": 2329.31,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1444982.1,
+          "used_bps": 2329.31,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3275.499814951862,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2329.3084987716406,
+          "served_bps": 2329.31,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1717.328543432932,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 3802419.1,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.3802419085822227
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1755889.8,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.17558897708171195
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 5499087.1,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.3055048368390417
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 5850544.8,
+      "served_bps_total": 2329.31,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 9,
+      "time_seconds": 2700,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3114651.4,
+          "used_bps": 2157.39,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 797764.3,
+          "used_bps": 2157.39,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 3151.543289325507,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2157.3924386587037,
+          "served_bps": 2157.39,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1600.8385715049442,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 3155201.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.3155201354224616
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1108672.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.11086720392195085
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 4204651.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.23359175555041825
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 4556109.3,
+      "served_bps_total": 2157.39,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 10,
+      "time_seconds": 3000,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 2518137.4,
+          "used_bps": 1988.38,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 201250.3,
+          "used_bps": 1988.38,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2989.9999999999995,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1988.3800134388512,
+          "served_bps": 1988.38,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1518.3656260256316,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 2558687.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.255868735019296
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 512158.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.05121580351878529
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 3011623.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.16731242176912323
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 3363081.3,
+      "served_bps_total": 1988.38,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 11,
+      "time_seconds": 3300,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1968000.6,
+          "used_bps": 1833.79,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1612459.2,
+          "used_bps": 1833.79,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2801.878855179966,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1833.7891405845787,
+          "served_bps": 1833.79,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1475.530101936422,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 2008550.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.20085506080175866
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1923366.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.19233668972899096
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 3872695.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.21514976176505005
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 4224153.4,
+      "served_bps_total": 1833.79,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 12,
+      "time_seconds": 3600,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1456754.1,
+          "used_bps": 1704.15,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1101212.7,
+          "used_bps": 1704.15,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2600.0,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1704.1549326074069,
+          "served_bps": 1704.15,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1475.251169414945,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 1497304.1,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.14973041282353647
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1412120.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.14121204175076876
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 2850202.8,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.15834459734480316
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 3201660.4,
+      "served_bps_total": 1704.15,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 13,
+      "time_seconds": 3900,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 974260.6,
+          "used_bps": 1608.31,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 618719.2,
+          "used_bps": 1608.31,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2398.121144820034,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1608.3117465503228,
+          "served_bps": 1608.31,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1517.5478372515809,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 1014810.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.10148106042702679
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 929626.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.09296268935425908
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 1885215.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.10473420579312574
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 2236673.4,
+      "served_bps_total": 1608.31,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 14,
+      "time_seconds": 4200,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 508423.3,
+          "used_bps": 1552.79,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 152881.9,
+          "used_bps": 1552.79,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2210.0000000000005,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1552.7911371547632,
+          "served_bps": 1552.79,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1599.5376574318118,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 548973.3,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.05489732631238389
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 463789.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.04637895523961618
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 953541.0,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.052974501221300305
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 1304998.7,
+      "served_bps_total": 1552.79,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 15,
+      "time_seconds": 4500,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 46010.2,
+          "used_bps": 1541.38,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1651814.4,
+          "used_bps": 1541.38,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2048.456710674493,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1541.3767421988898,
+          "served_bps": 1541.38,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1715.6331592049391,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 86560.2,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.008656024046417195
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1962722.1,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.19627221340139253
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 1990060.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.11055892116341678
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 2341518.3,
+      "served_bps_total": 1541.38,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 16,
+      "time_seconds": 4800,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4871724.4,
+          "used_bps": 1574.85,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1179360.5,
+          "used_bps": 1574.85,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 1924.500185048138,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1574.8464338357658,
+          "served_bps": 1574.85,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 1857.922625982013,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4912274.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4912274423108369
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1490268.2,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.14902682038631956
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 6343320.8,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.3524067129686094
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 6694778.5,
+      "served_bps_total": 1574.85,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 17,
+      "time_seconds": 5100,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 4376448.6,
+          "used_bps": 1650.92,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 684084.7,
+          "used_bps": 1650.92,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 1846.5778554945266,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1650.9193078916194,
+          "served_bps": 1650.92,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2016.709265746637,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 4416998.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.4416998630740884
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 994992.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.09949924114957098
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 5352769.2,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.2973760693722221
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 5704226.9,
+      "served_bps_total": 1650.92,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 18,
+      "time_seconds": 5400,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3847125.3,
+          "used_bps": 1764.41,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 154761.4,
+          "used_bps": 1764.41,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 1819.9999999999998,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1764.4111237159116,
+          "served_bps": 1764.41,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2181.172031406181,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 3887675.3,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.38876752936261094
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 465669.1,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.046566907438093635
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 4294122.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.2385623652483584
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 4645580.3,
+      "served_bps_total": 1764.41,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 19,
+      "time_seconds": 5700,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 3274849.0,
+          "used_bps": 1907.59,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1543830.7,
+          "used_bps": 1907.59,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 1846.5778554945266,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 1907.5876016143109,
+          "served_bps": 1907.59,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2340.103057268517,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 3315399.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.33153990131418165
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1854738.4,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.18547383981740737
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 5110915.6,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.2839397565432942
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 5462373.3,
+      "served_bps_total": 1907.59,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 20,
+      "time_seconds": 6000,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 2653641.6,
+          "used_bps": 2070.69,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 922623.3,
+          "used_bps": 2070.69,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 1924.500185048138,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2070.691501228359,
+          "served_bps": 2070.69,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2482.671456567068,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 2694191.6,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.2694191562773309
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1233530.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.12335309478055657
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 3868500.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.21491670650234887
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 4219958.4,
+      "served_bps_total": 2070.69,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 21,
+      "time_seconds": 6300,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1980859.3,
+          "used_bps": 2242.61,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 249841.0,
+          "used_bps": 2242.61,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2048.456710674493,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2242.607561341296,
+          "served_bps": 2242.61,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2599.1614284950556,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 2021409.3,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.202140929437092
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 560748.7,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.05607486794031771
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 2522936.2,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.14016312112430565
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 2874393.9,
+      "served_bps_total": 2242.61,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 22,
+      "time_seconds": 6600,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1257373.3,
+          "used_bps": 2411.62,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 1487700.6,
+          "used_bps": 2411.62,
+          "active": true,
+          "activated": true,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2209.9999999999995,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2411.619986561148,
+          "served_bps": 2411.62,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2681.6343739743684,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 1297923.3,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.12979232984025754
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1798608.3,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.1798608287712263
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 3037309.8,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.16873943292101354
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 3388767.5,
+      "served_bps_total": 2411.62,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    },
+    {
+      "slot": 23,
+      "time_seconds": 6900,
+      "links": [
+        {
+          "id": "gs-timmins:hap-2",
+          "source": "gs-timmins",
+          "target": "hap-2",
+          "distance_km": 33.31521216882724,
+          "elevation_deg": 26.625705786930983,
+          "capacity_bps": 17660.56,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 487510.0,
+          "used_bps": 2566.21,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-timmins:hap-5",
+          "source": "gs-timmins",
+          "target": "hap-5",
+          "distance_km": 56.895516105322585,
+          "elevation_deg": 15.039585202192018,
+          "capacity_bps": 2627.58,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 40550.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-2",
+          "source": "gs-iroquois",
+          "target": "hap-2",
+          "distance_km": 33.661130593617166,
+          "elevation_deg": 26.327452094253214,
+          "capacity_bps": 17187.79,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 292235.9,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-iroquois:hap-5",
+          "source": "gs-iroquois",
+          "target": "hap-5",
+          "distance_km": 28.844053827945814,
+          "elevation_deg": 31.22407353915719,
+          "capacity_bps": 25084.42,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 0.0,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-2",
+          "source": "gs-cochrane",
+          "target": "hap-2",
+          "distance_km": 45.79063254659457,
+          "elevation_deg": 18.927403226600802,
+          "capacity_bps": 6537.82,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 717837.3,
+          "used_bps": 2566.21,
+          "active": true,
+          "activated": false,
+          "allocated": true,
+          "enabled": true,
+          "in_range": true
+        },
+        {
+          "id": "gs-cochrane:hap-5",
+          "source": "gs-cochrane",
+          "target": "hap-5",
+          "distance_km": 24.369907747289684,
+          "elevation_deg": 37.902906514646375,
+          "capacity_bps": 35560.47,
+          "weather_loss_db": 0.0,
+          "visibility_km": 100.0,
+          "weather_flags": [
+            0,
+            0,
+            0
+          ],
+          "capacity_limit_bps": null,
+          "stored_bits": 310907.7,
+          "used_bps": 0.0,
+          "active": true,
+          "activated": false,
+          "allocated": false,
+          "enabled": true,
+          "in_range": true
+        }
+      ],
+      "positions": {
+        "hap-2": {
+          "lat": 48.68,
+          "lon": -81.07,
+          "altitude_km": 15.0
+        },
+        "hap-5": {
+          "lat": 48.9,
+          "lon": -80.95,
+          "altitude_km": 15.0
+        }
+      },
+      "weather_by_hap": {
+        "hap-2": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        },
+        "hap-5": {
+          "fog": 0,
+          "rain": 0,
+          "snow": 0
+        }
+      },
+      "historical_weather_regions": [],
+      "historical_weather_metadata": {},
+      "demands": [
+        {
+          "id": "d-tim-iro",
+          "source": "gs-timmins",
+          "target": "gs-iroquois",
+          "requested_bps": 2398.1211448200334,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        },
+        {
+          "id": "d-coch-tim",
+          "source": "gs-cochrane",
+          "target": "gs-timmins",
+          "requested_bps": 2566.210859415421,
+          "served_bps": 2566.21,
+          "path": [
+            "gs-cochrane",
+            "hap-2",
+            "gs-timmins"
+          ],
+          "status": "served"
+        },
+        {
+          "id": "d-iro-coch",
+          "source": "gs-iroquois",
+          "target": "gs-cochrane",
+          "requested_bps": 2724.4698980635776,
+          "served_bps": 0.0,
+          "path": [],
+          "status": "blocked"
+        }
+      ],
+      "qkps": [
+        {
+          "node_id": "gs-timmins",
+          "stored_bits": 528060.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.052806004057794925
+        },
+        {
+          "node_id": "gs-iroquois",
+          "stored_bits": 292235.9,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.029223589459438076
+        },
+        {
+          "node_id": "gs-cochrane",
+          "stored_bits": 1028745.0,
+          "capacity_bits": 10000000.0,
+          "fill_fraction": 0.10287450298876366
+        },
+        {
+          "node_id": "hap-2",
+          "stored_bits": 1497583.3,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.08319907094049948
+        },
+        {
+          "node_id": "hap-5",
+          "stored_bits": 351457.7,
+          "capacity_bits": 18000000.0,
+          "fill_fraction": 0.019525427118387558
+        }
+      ],
+      "stored_bits_total": 1849041.0,
+      "served_bps_total": 2566.21,
+      "optimizer": {
+        "algorithm": "stratoq-ppo",
+        "checkpoint_note": "Frozen PPO checkpoint",
+        "slot_reward": 0.33333
+      }
+    }
+  ],
+  "baselines": {},
+  "scenario": {
+    "ground_stations": [
+      {
+        "id": "gs-timmins",
+        "name": "Timmins",
+        "lat": 48.4758,
+        "lon": -81.3305,
+        "capacity_bits": 10000000.0,
+        "yaw_deg": 0.0,
+        "n_rx": 1,
+        "n_tx": 1
+      },
+      {
+        "id": "gs-iroquois",
+        "name": "Iroquois Falls",
+        "lat": 48.7669,
+        "lon": -80.6814,
+        "capacity_bits": 10000000.0,
+        "yaw_deg": 0.0,
+        "n_rx": 1,
+        "n_tx": 1
+      },
+      {
+        "id": "gs-cochrane",
+        "name": "Cochrane",
+        "lat": 49.067,
+        "lon": -81.016,
+        "capacity_bits": 10000000.0,
+        "yaw_deg": 0.0,
+        "n_rx": 1,
+        "n_tx": 1
+      }
+    ],
+    "balloons": [
+      {
+        "id": "hap-2",
+        "name": "HAP 2",
+        "lat": 48.68,
+        "lon": -81.07,
+        "altitude_km": 15.0,
+        "coverage_km": 210.0,
+        "capacity_bits": 18000000.0,
+        "yaw_deg": 0.0,
+        "n_rx": 1,
+        "n_tx": 1,
+        "trajectory_id": null,
+        "trajectory_name": null,
+        "trajectory_duration_seconds": null
+      },
+      {
+        "id": "hap-5",
+        "name": "HAP 5",
+        "lat": 48.9,
+        "lon": -80.95,
+        "altitude_km": 15.0,
+        "coverage_km": 210.0,
+        "capacity_bits": 18000000.0,
+        "yaw_deg": 0.0,
+        "n_rx": 1,
+        "n_tx": 1,
+        "trajectory_id": null,
+        "trajectory_name": null,
+        "trajectory_duration_seconds": null
+      }
+    ],
+    "demands": [
+      {
+        "id": "d-tim-iro",
+        "source": "gs-timmins",
+        "target": "gs-iroquois",
+        "rate_bps": 2600.0,
+        "pattern": "constant",
+        "peak_hour": 14.0,
+        "peak_uplift_pct": 70.0,
+        "peak_width_hours": 3.0,
+        "second_peak_hour": 21.0,
+        "second_peak_ratio_pct": 65.0,
+        "burst_interval_hours": 6.0,
+        "burst_duration_minutes": 45.0
+      },
+      {
+        "id": "d-coch-tim",
+        "source": "gs-cochrane",
+        "target": "gs-timmins",
+        "rate_bps": 2200.0,
+        "pattern": "constant",
+        "peak_hour": 14.0,
+        "peak_uplift_pct": 70.0,
+        "peak_width_hours": 3.0,
+        "second_peak_hour": 21.0,
+        "second_peak_ratio_pct": 65.0,
+        "burst_interval_hours": 6.0,
+        "burst_duration_minutes": 45.0
+      },
+      {
+        "id": "d-iro-coch",
+        "source": "gs-iroquois",
+        "target": "gs-cochrane",
+        "rate_bps": 2100.0,
+        "pattern": "constant",
+        "peak_hour": 14.0,
+        "peak_uplift_pct": 70.0,
+        "peak_width_hours": 3.0,
+        "second_peak_hour": 21.0,
+        "second_peak_ratio_pct": 65.0,
+        "burst_interval_hours": 6.0,
+        "burst_duration_minutes": 45.0
+      }
+    ],
+    "weather_regions": [],
+    "config": {
+      "slots": 24,
+      "slot_seconds": 300,
+      "base_rate_bps": 36000.0,
+      "optical": {
+        "wavelength_nm": 1550.0,
+        "beam_waist_m": 0.15,
+        "rx_aperture_down_m": 0.75,
+        "rx_aperture_up_m": 0.4,
+        "obscuration_ratio": 0.3,
+        "cn0": 1e-13,
+        "pointing_error_rad": 1e-07,
+        "tracking_efficiency": 0.85,
+        "detector_efficiency": 0.85,
+        "ao_correction_order": 6,
+        "wind_speed_mps": 10.0,
+        "source_rate_hz": 80000000.0,
+        "source_efficiency": 0.01,
+        "qber": 0.04
+      },
+      "allocation_mode": "scar_q",
+      "allocator_seed": 42,
+      "optimality_gap": 0.01,
+      "optimal_time_limit_seconds": 300,
+      "mcr_samples": 3,
+      "channel_workers": 4,
+      "weather_source": "manual",
+      "era5_date": null,
+      "era5_dataset_id": null
+    },
+    "link_overrides": []
+  }
+}

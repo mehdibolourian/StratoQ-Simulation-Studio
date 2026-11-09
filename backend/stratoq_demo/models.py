@@ -29,6 +29,12 @@ class Balloon(BaseModel):
     trajectory_id: str | None = None
     trajectory_name: str | None = None
     trajectory_duration_seconds: float | None = Field(default=None, gt=0)
+    # Translation only. Does not recalculate the historical wind trajectory.
+    trajectory_origin_mode: Literal["original", "shifted"] = "original"
+    trajectory_start_lat: float | None = Field(default=None, ge=-90, le=90)
+    trajectory_start_lon: float | None = Field(default=None, ge=-180, le=180)
+    trajectory_source_lat: float | None = Field(default=None, ge=-90, le=90)
+    trajectory_source_lon: float | None = Field(default=None, ge=-180, le=180)
 
 
 class Demand(BaseModel):
@@ -74,6 +80,13 @@ class WeatherRegion(BaseModel):
     visibility_km: float | None = Field(default=None, gt=0, le=100)
     precipitation_rate_mm_h: float | None = Field(default=None, ge=0, le=500)
     snow_type: Literal["wet", "dry"] = "wet"
+    # Deterministic, manually scheduled weather. None = present throughout.
+    active_from_seconds: float = Field(default=0, ge=0, le=86400)
+    active_until_seconds: float | None = Field(default=None, ge=0, le=86400)
+    ramp_seconds: float = Field(default=0, ge=0, le=86400)
+    drift_lat_deg_per_hour: float = Field(default=0, ge=-2, le=2)
+    drift_lon_deg_per_hour: float = Field(default=0, ge=-2, le=2)
+    intensity_fraction: float = Field(default=1, ge=0, le=1)
 
 
 
@@ -110,6 +123,8 @@ class SimulationConfig(BaseModel):
 
     slots: int = Field(default=288, ge=1, le=86400)
     slot_seconds: int = Field(default=300, ge=1, le=86400)
+    horizon_seconds: int | None = Field(default=None, ge=1, le=86400)
+    qkp_enabled: bool = True
     base_rate_bps: float = Field(default=36_000, gt=0, le=1e9)  # legacy input, ignored by physical engine
     optical: OpticalParameters = Field(default_factory=OpticalParameters)
     allocation_mode: Literal["scar_q", "mcr_q", "optimal"] = "scar_q"
@@ -207,11 +222,13 @@ class SimulationFrame(BaseModel):
     positions: dict[str, dict[str, float]] = Field(default_factory=dict)
     weather_by_hap: dict[str, dict[str, int]] = Field(default_factory=dict)
     historical_weather_regions: list[dict] = Field(default_factory=list)
+    manual_weather_regions: list[dict] = Field(default_factory=list)
     historical_weather_metadata: dict = Field(default_factory=dict)
     demands: list[DemandState]
     qkps: list[QKPState] = Field(default_factory=list)
     stored_bits_total: float
     served_bps_total: float
+    qkp_drawn_link_bits: float = 0.0
     optimizer: dict[str, float | int | str] = Field(default_factory=dict)
 
 

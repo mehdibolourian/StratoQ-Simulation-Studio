@@ -1,0 +1,76 @@
+{
+  "id": "46033a686e2a47e187c1c7ab50787be2",
+  "status": "complete",
+  "stage": "complete",
+  "episode": 30,
+  "episodes": 30,
+  "checkpoints": [
+    {
+      "episode": 0,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 5,
+      "evaluation_reward": 0.34687051841203753,
+      "evaluation_satisfaction": 0.3341288284619891,
+      "evaluation_served_bits": 16599520.197991619
+    },
+    {
+      "episode": 10,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 15,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 20,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 25,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 30,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    }
+  ],
+  "error": null,
+  "started_at": 1793835745.055232,
+  "physical_progress": {
+    "stage": "complete",
+    "total": 12,
+    "completed": 12,
+    "cached": 0,
+    "computed": 12,
+    "workers": 4
+  },
+  "baselines": {
+    "scar_q_bits": 34984769.11746456,
+    "mcr_q_bits": 32525284.66774942
+  },
+  "shape": {
+    "n_gs": 3,
+    "n_haps": 2,
+    "n_demands": 3,
+    "n_links": 12,
+    "observation_dim": 102,
+    "logits_dim": 8,
+    "hidden_dim": 64
+  },
+  "curriculum_active_demands": 3,
+  "finished_at": 1793835748.117594
+}

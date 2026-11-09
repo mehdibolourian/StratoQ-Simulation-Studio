@@ -1,0 +1,1237 @@
+{
+  "id": "3c6ddf010dd9482d9b008fb202060d17",
+  "status": "complete",
+  "stage": "complete",
+  "episode": 1000,
+  "episodes": 1000,
+  "checkpoints": [
+    {
+      "episode": 0,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 5,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 10,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 15,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 20,
+      "evaluation_reward": 0.4263825658192135,
+      "evaluation_satisfaction": 0.41164036881121596,
+      "evaluation_served_bits": 20450293.52254121
+    },
+    {
+      "episode": 25,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 30,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 35,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 40,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 45,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 50,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 55,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 60,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 65,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 70,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 75,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 80,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 85,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 90,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 95,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 100,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 105,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 110,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 115,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 120,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 125,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 130,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 135,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 140,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 145,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 150,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 155,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 160,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 165,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 170,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6895523239664297,
+      "evaluation_served_bits": 34256959.45465223
+    },
+    {
+      "episode": 175,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 180,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 185,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 190,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 195,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 200,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 205,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 210,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 215,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 220,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 225,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 230,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 235,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 240,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 245,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 250,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 255,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 260,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 265,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 270,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 275,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 280,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 285,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 290,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 295,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 300,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 305,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 310,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 315,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 320,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 325,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 330,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 335,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 340,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 345,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 350,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 355,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 360,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 365,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 370,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 375,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 380,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 385,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 390,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 395,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 400,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 405,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 410,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 415,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 420,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 425,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 430,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 435,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 440,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 445,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 450,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 455,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 460,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 465,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 470,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6473808002442661,
+      "evaluation_served_bits": 32161878.15613514
+    },
+    {
+      "episode": 475,
+      "evaluation_reward": 0.6420028199171971,
+      "evaluation_satisfaction": 0.6620480935002594,
+      "evaluation_served_bits": 32890549.285092887
+    },
+    {
+      "episode": 480,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 485,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 490,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 495,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.605573706112822,
+      "evaluation_served_bits": 30084901.719685
+    },
+    {
+      "episode": 500,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6437607653521308,
+      "evaluation_served_bits": 31982034.822693855
+    },
+    {
+      "episode": 505,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 510,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6562434167633966,
+      "evaluation_served_bits": 32602172.944805544
+    },
+    {
+      "episode": 515,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6405162338204835,
+      "evaluation_served_bits": 31820846.496201623
+    },
+    {
+      "episode": 520,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.63687957225741,
+      "evaluation_served_bits": 31640177.149748128
+    },
+    {
+      "episode": 525,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.6479342701378444,
+      "evaluation_served_bits": 32189374.54044811
+    },
+    {
+      "episode": 530,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 535,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 540,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6608210841316231,
+      "evaluation_served_bits": 32829591.459659036
+    },
+    {
+      "episode": 545,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 550,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6608210841316231,
+      "evaluation_served_bits": 32829591.459659036
+    },
+    {
+      "episode": 555,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6608210841316231,
+      "evaluation_served_bits": 32829591.459659036
+    },
+    {
+      "episode": 560,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6608210841316231,
+      "evaluation_served_bits": 32829591.459659036
+    },
+    {
+      "episode": 565,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 570,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 575,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.6344196204515925,
+      "evaluation_served_bits": 31517966.744035117
+    },
+    {
+      "episode": 580,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6568822438091997,
+      "evaluation_served_bits": 32633909.87244104
+    },
+    {
+      "episode": 585,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 590,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.6462248728422754,
+      "evaluation_served_bits": 32104451.682804238
+    },
+    {
+      "episode": 595,
+      "evaluation_reward": 0.6546464162616471,
+      "evaluation_satisfaction": 0.6608210841316231,
+      "evaluation_served_bits": 32829591.459659036
+    },
+    {
+      "episode": 600,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.645127123227463,
+      "evaluation_served_bits": 32049915.481940363
+    },
+    {
+      "episode": 605,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.6462248728422754,
+      "evaluation_served_bits": 32104451.682804238
+    },
+    {
+      "episode": 610,
+      "evaluation_reward": 0.6612782660093572,
+      "evaluation_satisfaction": 0.646881997088291,
+      "evaluation_served_bits": 32137097.615346294
+    },
+    {
+      "episode": 615,
+      "evaluation_reward": 0.6595030217618665,
+      "evaluation_satisfaction": 0.6514781074126439,
+      "evaluation_served_bits": 32365432.37626015
+    },
+    {
+      "episode": 620,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6532622089170642,
+      "evaluation_served_bits": 32454066.538999747
+    },
+    {
+      "episode": 625,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 630,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6235923181273093,
+      "evaluation_served_bits": 30980066.364564728
+    },
+    {
+      "episode": 635,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6438529621083751,
+      "evaluation_served_bits": 31986615.157544073
+    },
+    {
+      "episode": 640,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6532622089170642,
+      "evaluation_served_bits": 32454066.538999747
+    },
+    {
+      "episode": 645,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 650,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6532622089170642,
+      "evaluation_served_bits": 32454066.538999747
+    },
+    {
+      "episode": 655,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 660,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 665,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6605777749404721,
+      "evaluation_served_bits": 32817503.859042652
+    },
+    {
+      "episode": 670,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6532622089170642,
+      "evaluation_served_bits": 32454066.538999747
+    },
+    {
+      "episode": 675,
+      "evaluation_reward": 0.6616296743791646,
+      "evaluation_satisfaction": 0.6938641356028571,
+      "evaluation_served_bits": 34471170.25674994
+    },
+    {
+      "episode": 680,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6939256730529193,
+      "evaluation_served_bits": 34474227.43726903
+    },
+    {
+      "episode": 685,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6939256730529193,
+      "evaluation_served_bits": 34474227.43726903
+    },
+    {
+      "episode": 690,
+      "evaluation_reward": 0.6420028199171971,
+      "evaluation_satisfaction": 0.6620480935002594,
+      "evaluation_served_bits": 32890549.285092887
+    },
+    {
+      "episode": 695,
+      "evaluation_reward": 0.6663149628564818,
+      "evaluation_satisfaction": 0.6813259605114613,
+      "evaluation_served_bits": 33848273.7182094
+    },
+    {
+      "episode": 700,
+      "evaluation_reward": 0.6420028199171971,
+      "evaluation_satisfaction": 0.6620480935002594,
+      "evaluation_served_bits": 32890549.285092887
+    },
+    {
+      "episode": 705,
+      "evaluation_reward": 0.6420028199171971,
+      "evaluation_satisfaction": 0.6620480935002594,
+      "evaluation_served_bits": 32890549.285092887
+    },
+    {
+      "episode": 710,
+      "evaluation_reward": 0.6420028199171971,
+      "evaluation_satisfaction": 0.6620480935002594,
+      "evaluation_served_bits": 32890549.285092887
+    },
+    {
+      "episode": 715,
+      "evaluation_reward": 0.6650789415887819,
+      "evaluation_satisfaction": 0.6916141340087187,
+      "evaluation_served_bits": 34359390.17755315
+    },
+    {
+      "episode": 720,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 725,
+      "evaluation_reward": 0.6651112881893161,
+      "evaluation_satisfaction": 0.6806274434883639,
+      "evaluation_served_bits": 33813571.39250192
+    },
+    {
+      "episode": 730,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 735,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 740,
+      "evaluation_reward": 0.6433466341413155,
+      "evaluation_satisfaction": 0.6624409902622201,
+      "evaluation_served_bits": 32910068.396227095
+    },
+    {
+      "episode": 745,
+      "evaluation_reward": 0.6433466341413155,
+      "evaluation_satisfaction": 0.6714588740846487,
+      "evaluation_served_bits": 33358076.864525348
+    },
+    {
+      "episode": 750,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 755,
+      "evaluation_reward": 0.6433466341413155,
+      "evaluation_satisfaction": 0.6624409902622201,
+      "evaluation_served_bits": 32910068.396227095
+    },
+    {
+      "episode": 760,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 765,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 770,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 775,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 780,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 785,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 790,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 795,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 800,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 805,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 810,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 815,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 820,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 825,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 830,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 835,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 840,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 845,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 850,
+      "evaluation_reward": 0.6659393732772845,
+      "evaluation_satisfaction": 0.6222702725124549,
+      "evaluation_served_bits": 30914387.13841876
+    },
+    {
+      "episode": 855,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 860,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 865,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 870,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 875,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 880,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 885,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 890,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 895,
+      "evaluation_reward": 0.6441747192292838,
+      "evaluation_satisfaction": 0.6625720708905521,
+      "evaluation_served_bits": 32916580.48184263
+    },
+    {
+      "episode": 900,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 905,
+      "evaluation_reward": 0.6432185262785414,
+      "evaluation_satisfaction": 0.6622129125905516,
+      "evaluation_served_bits": 32898737.497498605
+    },
+    {
+      "episode": 910,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6231884057971013,
+      "evaluation_served_bits": 30959999.999999996
+    },
+    {
+      "episode": 915,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 920,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 925,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 930,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 935,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 940,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 945,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 950,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 955,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 960,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 965,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 970,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 975,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 980,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 985,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 990,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 995,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    },
+    {
+      "episode": 1000,
+      "evaluation_reward": 0.6666666666666664,
+      "evaluation_satisfaction": 0.6811594202898551,
+      "evaluation_served_bits": 33840000.0
+    }
+  ],
+  "error": null,
+  "started_at": 1793839657.104975,
+  "physical_progress": {
+    "stage": "complete",
+    "total": 12,
+    "completed": 12,
+    "cached": 12,
+    "computed": 0,
+    "workers": 0
+  },
+  "updated_at": 1793839726.146591,
+  "shape": {
+    "n_gs": 3,
+    "n_haps": 2,
+    "n_demands": 3,
+    "n_links": 12,
+    "observation_dim": 102,
+    "logits_dim": 8,
+    "hidden_dim": 64
+  },
+  "curriculum_active_demands": 3,
+  "finished_at": 1793839726.146591
+}

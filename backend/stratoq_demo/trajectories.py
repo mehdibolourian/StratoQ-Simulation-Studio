@@ -9,6 +9,14 @@ import csv
 import io
 import math
 import uuid
+from pathlib import Path
+
+_BUILTIN_FILES = {
+    'builtin:csv-ontario-6h': 'csv-ontario-6h.csv',
+    'builtin:csv-ontario-24h': 'csv-ontario-24h.csv',
+    'builtin:may-strato-6h': 'may-strato-6h.csv',
+    'builtin:june-strato-6h': 'june-strato-6h.csv',
+}
 import xml.etree.ElementTree as ET
 from zipfile import ZipFile
 
@@ -107,8 +115,17 @@ def register(filename, contents):
     return {'trajectory_id':key, 'filename':filename, 'duration_seconds':trajectory['duration_seconds'], 'rows':trajectory['rows'], 'first':sample(key, 0), 'last':sample(key, trajectory['duration_seconds'])}
 
 
+def _load(key):
+    data = TRAJECTORIES.get(key)
+    if data is None and key in _BUILTIN_FILES:
+        path = Path(__file__).resolve().parent / 'builtin_trajectories' / _BUILTIN_FILES[key]
+        data = parse_trajectory(path.name, path.read_bytes())
+        TRAJECTORIES[key] = data
+    return data
+
+
 def sample(key, second):
-    data=TRAJECTORIES.get(key)
+    data=_load(key)
     if data is None:
         raise ValueError('Uploaded trajectory is no longer available; please upload it again')
     t=data['times']
@@ -127,10 +144,14 @@ def sample(key, second):
 
 def horizon_seconds(scenario):
     ids=[b.trajectory_id for b in scenario.balloons if b.trajectory_id]
-    if not ids:return None
-    if any(k not in TRAJECTORIES for k in ids):
+    if not ids:return scenario.config.horizon_seconds
+    if any(_load(k) is None for k in ids):
         raise ValueError('Trajectory session expired; re-upload the file')
-    return min(TRAJECTORIES[k]['duration_seconds'] for k in ids)
+    trajectory_limit = min((_load(k)['duration_seconds'] for k in ids), default=None)
+    requested = scenario.config.horizon_seconds
+    if requested is not None:
+        return min(requested, trajectory_limit) if trajectory_limit is not None else requested
+    return trajectory_limit
 
 
 def scenario_at(scenario, seconds):
@@ -139,6 +160,18 @@ def scenario_at(scenario, seconds):
     for balloon in updated.balloons:
         if balloon.trajectory_id:
             point=sample(balloon.trajectory_id,seconds)
+            if balloon.trajectory_origin_mode == 'shifted':
+                source=sample(balloon.trajectory_id,0)
+                if balloon.trajectory_start_lat is None or balloon.trajectory_start_lon is None:
+                    raise ValueError(f'Shifted trajectory {balloon.id} needs a target first latitude and longitude')
+                point['lat'] += balloon.trajectory_start_lat - source['lat']
+                point['lon'] = longitude(point['lon'] + ((balloon.trajectory_start_lon - source['lon'] + 180) % 360 - 180))
+                if not -90 <= point['lat'] <= 90:
+                    raise ValueError('Translated trajectory leaves valid latitude range')
             balloon.lat=point['lat']; balloon.lon=point['lon']; balloon.altitude_km=max(0.001, point['altitude_km'])
         positions[balloon.id]={'lat':balloon.lat,'lon':balloon.lon,'altitude_km':balloon.altitude_km}
+    # Snapshot time-varying manual weather before link losses are computed.
+    from .scheduled_weather import weather_at
+    updated.weather_regions = [resolved for region in updated.weather_regions
+                               if (resolved := weather_at(region, seconds)) is not None]
     return updated,positions

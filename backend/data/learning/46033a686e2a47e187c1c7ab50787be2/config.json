@@ -1,0 +1,7 @@
+{
+  "preset": "ontario-compact-v1",
+  "slots": 24,
+  "episodes": 30,
+  "checkpoint_every": 5,
+  "seed": 42
+}

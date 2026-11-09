@@ -1,8 +1,9 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid, Html, Line, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { CENTER, fromWorld, position3D } from '../lib/geo';
+import { fromWorld, position3D } from '../lib/geo';
+import { sceneBounds } from '../lib/sceneBounds.js';
 import { resolveVisualLinks } from '../lib/topology.js';
 
 const CYAN = '#56e9dc';
@@ -430,7 +431,44 @@ function StoredKeyPulse({points}) {
 function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode, onPositionChange, autoRotate }) {
   const [dragging, setDragging] = useState(false);
   const orbitRef = useRef();
-  const { camera } = useThree();
+  const { camera, size } = useThree();
+  const layout=useMemo(()=>sceneBounds(scenario),[scenario]);
+  const boundsWidth=layout.spanX, boundsDepth=layout.spanZ;
+  const cameraDistance=useMemo(()=>{
+    // Fit an oblique perspective to both geographical span and HAP altitude.
+    // Account for the viewport aspect ratio (portrait vs. desktop split view).
+    const aspect=Math.max(.5,size.width/Math.max(1,size.height));
+    const halfVerticalFov=camera.fov*Math.PI/360;
+    const halfHorizontalFov=Math.atan(Math.tan(halfVerticalFov)*aspect);
+    const distHorizontal=(Math.max(boundsWidth,boundsDepth)/2)/Math.sin(halfHorizontalFov);
+    const distVertical=(layout.maxY/2+8)/Math.sin(halfVerticalFov);
+    return Math.max(85,1.35*Math.max(distHorizontal,distVertical,layout.viewRadius));
+  },[boundsWidth,boundsDepth,layout.maxY,layout.viewRadius,size.width,size.height,camera.fov]);
+  const fittedRef = useRef(false);
+  useEffect(()=>{
+    // Fit on first mount (or explicit Reset, which remounts Scene). While
+    // playing, moving trajectory positions change sceneBounds every frame;
+    // NEVER replace an orbit direction chosen with the mouse at each slot.
+    if(dragging || (frame && fittedRef.current)) return;
+    const orbit=orbitRef.current;
+    if(!orbit) return;
+    const previousDirection = camera.position.clone().sub(orbit.target);
+    const direction = fittedRef.current && previousDirection.lengthSq()>1e-8
+      ? previousDirection.normalize()
+      : new THREE.Vector3(.60,.48,.76).normalize();
+    // Editing a topology changes framing but preserves its chosen azimuth
+    // and elevation. During playback the gentle translation below follows
+    // distant balloons without rotating the scene.
+    const target = new THREE.Vector3(layout.centerX,layout.targetY,layout.centerZ);
+    camera.position.copy(target).addScaledVector(direction,cameraDistance);
+    camera.near=.15;
+    camera.far=Math.max(1400,cameraDistance*5+layout.viewRadius*2);
+    camera.updateProjectionMatrix();
+    orbit.target.copy(target);
+    orbit.update();
+    fittedRef.current=true;
+  },[camera,layout.centerX,layout.centerZ,layout.targetY,layout.viewRadius,
+      layout.spanX,layout.spanZ,cameraDistance,dragging,Boolean(frame)]);
   const trajectoryHap = scenario.balloons.find(b => b.trajectory_id);
   const followPoint = trajectoryHap ? position3D(trajectoryHap) : null;
   // Keep distant uploaded trajectories visible without snapping on every slot.
@@ -457,26 +495,28 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
   const coords = Object.fromEntries([...scenario.ground_stations, ...scenario.balloons].map(n => [n.id, position3D(n)]));
   return <>
     <color attach="background" args={['#0a1826']} />
-    <fog attach="fog" args={['#0a1826', 180, 650]} />
+    <fog attach="fog" args={['#0a1826', Math.max(180,cameraDistance*1.8), Math.max(650,cameraDistance*5)]} />
     <ambientLight intensity={1.6} />
     <hemisphereLight args={['#c2eaff', '#263747', 2.3]} />
     <directionalLight position={[35, 70, 10]} intensity={2.7} color="#f9e7d4" castShadow shadow-mapSize={[2048, 2048]} />
     <pointLight position={[-38, 20, 5]} intensity={140} distance={105} color="#28b4b9" />
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.17, 0]} receiveShadow>
-      <planeGeometry args={[300, 300]} />
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[layout.centerX, -0.17, layout.centerZ]} receiveShadow>
+      <planeGeometry args={[layout.planeSize, layout.planeSize]} />
       <meshStandardMaterial color="#0d202f" roughness={0.95} />
     </mesh>
-    <Grid args={[180, 180]} position={[0, -0.14, 0]} cellSize={4} cellThickness={0.55}
-      cellColor="#24465a" sectionSize={20} sectionThickness={1.2} sectionColor="#326378"
-      fadeDistance={135} fadeStrength={1.8} infiniteGrid />
-    {/* Axis labels provide geospatial context, not a precisely scaled Earth globe. */}
-    <Line points={[[-59, 0, 58], [62, 0, 58]]} color="#728aa3" lineWidth={1.2} />
-    <Line points={[[-59, 0, 58], [-59, 0, -58]]} color="#728aa3" lineWidth={1.2} />
-    <Line points={[[-59, 0, 58], [-59, 34, 58]]} color="#d6a877" lineWidth={1.8} />
-    <Html position={[-59, 36, 58]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">ALT ↑</div></Html>
-    <Html position={[55, 0, 61]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LONGITUDE →</div></Html>
-    <Html position={[-61, 0, -56]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LATITUDE ↑</div></Html>
-    <Html position={[0, 0, 52]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label subtle">{CENTER.lat.toFixed(3)}° N · {Math.abs(CENTER.lon).toFixed(3)}° W</div></Html>
+    <Grid args={[layout.planeSize,layout.planeSize]} position={[layout.centerX, -0.14, layout.centerZ]}
+      cellSize={layout.extent>400?20:4} cellThickness={0.55}
+      cellColor="#24465a" sectionSize={layout.extent>400?100:20} sectionThickness={1.2} sectionColor="#326378"
+      fadeDistance={Math.max(135,layout.extent*1.5)} fadeStrength={1.8} infiniteGrid />
+    {/* Bounds-aware latitude/longitude/altitude axes. They follow the edited
+        network rather than staying near the original Northern Ontario center. */}
+    <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMax,0,layout.axisZMax]]} color="#728aa3" lineWidth={1.2} />
+    <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMin,0,layout.axisZMin]]} color="#728aa3" lineWidth={1.2} />
+    <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMin,layout.axisHeight,layout.axisZMax]]} color="#d6a877" lineWidth={1.8} />
+    <Html position={[layout.axisXMin,layout.axisHeight+2,layout.axisZMax]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">ALT ↑</div></Html>
+    <Html position={[layout.axisXMax,0,layout.axisZMax+3]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LONGITUDE →</div></Html>
+    <Html position={[layout.axisXMin-3,0,layout.axisZMin]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LATITUDE ↑</div></Html>
+    <Html position={[layout.centerX,0,layout.axisZMax+4]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label subtle">{Math.abs(fromWorld(layout.centerX,layout.centerZ).lat).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lat>=0?'N':'S'} · {Math.abs(fromWorld(layout.centerX,layout.centerZ).lon).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lon<0?'W':'E'}</div></Html>
     {scenario.weather_regions.map(w => <Cloud key={w.id} weather={w} selected={selectedId === w.id} onSelect={onSelect} dragMode={dragMode} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} />)}
     {links.map(link => {
       const a = coords[link.source], b = coords[link.target];
@@ -527,8 +567,8 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
       dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[gs.id]} />)}
     {scenario.balloons.map(hap => <ModelNode key={hap.id} item={hap} type="balloon" selected={selectedId===hap.id}
       dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[hap.id]} />)}
-    <OrbitControls ref={orbitRef} makeDefault enabled={!dragging} target={[0, 6, 0]} minDistance={20}
-      maxDistance={600} minPolarAngle={0.10} maxPolarAngle={Math.PI * 0.48}
+    <OrbitControls ref={orbitRef} makeDefault enabled={!dragging} minDistance={12}
+      maxDistance={Math.max(600,cameraDistance*5)} minPolarAngle={0.10} maxPolarAngle={Math.PI * 0.48}
       enableDamping dampingFactor={0.075} autoRotate={autoRotate && !dragging} autoRotateSpeed={0.32} />
   </>;
 }

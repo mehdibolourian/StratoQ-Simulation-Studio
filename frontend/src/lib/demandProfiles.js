@@ -29,7 +29,9 @@ export function simulationHorizonSeconds(scenario) {
   const durations = (scenario.balloons || []).filter(h=>h.trajectory_id)
     .map(h=>Number(h.trajectory_duration_seconds)).filter(x=>Number.isFinite(x)&&x>0);
   const horizon = durations.length ? Math.min(...durations) : 86400;
-  return scenario.config.weather_source === 'era5' ? Math.min(86400,horizon) : horizon;
+  const selected = Number(scenario.config.horizon_seconds);
+  const withLimit = Number.isFinite(selected) && selected > 0 ? Math.min(horizon, selected) : horizon;
+  return scenario.config.weather_source === 'era5' ? Math.min(86400,withLimit) : withLimit;
 }
 export function slotCount(scenario) {
   return Math.max(1, Math.ceil(simulationHorizonSeconds(scenario)/Number(scenario.config.slot_seconds||300)));

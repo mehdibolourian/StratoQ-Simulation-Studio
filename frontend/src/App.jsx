@@ -3,16 +3,18 @@ import {
   Activity, ArrowDownToLine, ArrowUpFromLine, ArrowRight, Box, Check, ChevronDown, CircleHelp,
   Cloud, CloudRain, CalendarDays, Crosshair, Gauge, Layers3, Map, Maximize2, MousePointer2,
   Pause, Play, Plus, RadioTower, RefreshCcw, Rotate3D, SatelliteDish,
-  Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, GripVertical, Pencil, Copy,
+  Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, GripVertical, Pencil, Copy, BrainCircuit,
 } from 'lucide-react';
 import Network3D from './components/Network3D.jsx';
 import GeoMap from './components/GeoMap.jsx';
+import LearningLab from './components/LearningLab.jsx';
 import { INITIAL_SCENARIO } from './lib/sample.js';
+import BUILTINS from './lib/builtinExperiments.json';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
 import { demandSeries, simulationHorizonSeconds, slotCount } from './lib/demandProfiles.js';
 
-const STUDIO_VERSION = '1.0.5'; // Stable API handshake; v1.1.4 frontend feature build
+const STUDIO_VERSION = '1.0.5'; // Stable backend API handshake; UI showcase v1.2.6
 const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
 function migrateAllocator(scenario) {
@@ -79,9 +81,14 @@ function downloadJSON(filename, data) {
 }
 
 const WORKSPACE_KEY = 'stratoq.workspace.v104';
-const makeExperiment = (scenario, name='Experiment 1') => ({
+const makeExperiment = (scenario, name='New experiment') => ({
   id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random(),
   name, scenario: migrateAllocator(scenario), selectedId: null, result: null, dirty: true, frameIndex: 0,
+});
+const makeBuiltin = (preset) => ({
+  ...makeExperiment(preset.scenario,preset.title),
+  builtin: {id:preset.id, family:preset.family, angle:preset.angle, watch:preset.watch},
+  selectedId: preset.scenario.balloons[0]?.id || null,
 });
 function readWorkspace() {
   try {
@@ -91,8 +98,8 @@ function readWorkspace() {
         activeId:stored.experiments.some(e=>e.id===stored.activeId) ? stored.activeId : stored.experiments[0].id};
     }
   }catch(_){}
-  const first=makeExperiment(INITIAL_SCENARIO,'Experiment 1'); first.selectedId='hap-1';
-  return {experiments:[first],activeId:first.id};
+  const firsts=BUILTINS.experiments.map(makeBuiltin);
+  return {experiments:firsts,activeId:firsts[0].id};
 }
 function isScenario(obj) {
   return obj && typeof obj==='object' && !Array.isArray(obj) &&
@@ -101,6 +108,7 @@ function isScenario(obj) {
     obj.config && typeof obj.config==='object';
 }
 export default function App() {
+  const [activeScreen, setActiveScreen] = useState('studio');
   const [initialWorkspace] = useState(readWorkspace);
   const [experiments, setExperiments] = useState(initialWorkspace.experiments);
   const [activeId, setActiveId] = useState(initialWorkspace.activeId);
@@ -112,6 +120,8 @@ export default function App() {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
   const importRef=useRef(null);
+  const filesMenuRef=useRef(null);
+  const [expandedMoment,setExpandedMoment]=useState(null);
   const workspaceRef=useRef(null);
   const resizeRef=useRef(null);
   const latestSnapshot=useRef(null);
@@ -142,6 +152,18 @@ export default function App() {
   latestSnapshot.current = {scenario, selectedId, result, dirty, frameIndex};
   latestExperiments.current = experiments;
   activeIdRef.current = activeId;
+  useEffect(()=>{
+    const closeOutside=(event)=>{
+      if(filesMenuRef.current?.open && !filesMenuRef.current.contains(event.target))
+        filesMenuRef.current.open=false;
+    };
+    const closeEscape=(event)=>{
+      if(event.key==='Escape' && filesMenuRef.current?.open) filesMenuRef.current.open=false;
+    };
+    document.addEventListener('pointerdown',closeOutside);
+    document.addEventListener('keydown',closeEscape);
+    return ()=>{document.removeEventListener('pointerdown',closeOutside);document.removeEventListener('keydown',closeEscape);};
+  },[]);
   useEffect(() => {
     // Persist editable scenarios only. Simulation results can be huge and are not durable.
     try {
@@ -170,6 +192,7 @@ export default function App() {
     return latestExperiments.current.map(e=>e.id===activeIdRef.current ? {...e,...snap} : e);
   }
   function loadExperiment(exp) {
+    setExpandedMoment(null);
     ++requestId.current; ++weatherRequestId.current;
     setScenario(migrateAllocator(exp.scenario));setSelectedId(exp.selectedId || null);
     setResult(exp.result || null);setDirty(exp.dirty ?? true);setFrameIndex(exp.frameIndex || 0);
@@ -186,6 +209,19 @@ export default function App() {
     const saved=saveCurrent();
     const next=makeExperiment(INITIAL_SCENARIO,`Experiment ${saved.length+1}`);
     next.selectedId='hap-1';setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+  }
+  function addBuiltinExperiment(presetId) {
+    const preset=BUILTINS.experiments.find(p=>p.id===presetId);
+    if(!preset)return;
+    const saved=saveCurrent();
+    // Reopening the same built-in creates an independent editable instance.
+    const next=makeBuiltin(preset);
+    setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+  }
+  function replaceInitialExamples() {
+    if (!window.confirm('Replace the current tabs with the five built-in showcase experiments? Export your workspace first if you want to keep it.'))return;
+    const next=BUILTINS.experiments.map(makeBuiltin);
+    setExperiments(next);setActiveId(next[0].id);loadExperiment(next[0]);
   }
   function duplicateExperiment() {
     const saved=saveCurrent();const current=saved.find(e=>e.id===activeIdRef.current);
@@ -212,7 +248,7 @@ export default function App() {
       const payload=JSON.parse(await file.text());
       if(payload?.format==='stratoq-workspace' && Array.isArray(payload.experiments) && payload.experiments.length &&
         payload.experiments.every(e=>isScenario(e.scenario))) {
-        const restored=payload.experiments.map(e=>({...makeExperiment(e.scenario,e.name || 'Experiment'),id:e.id || makeExperiment(e.scenario).id, selectedId:e.selectedId || null}));
+        const restored=payload.experiments.map(e=>({...makeExperiment(e.scenario,e.name || 'Experiment'),id:e.id || makeExperiment(e.scenario).id, selectedId:e.selectedId || null,builtin:e.builtin || null}));
         const chosen=restored.find(e=>e.id===payload.activeId)||restored[0];
         setExperiments(restored);setActiveId(chosen.id);loadExperiment(chosen);
       } else if(isScenario(payload)) {
@@ -237,7 +273,8 @@ export default function App() {
   const visualScenario = useMemo(() => {
     const copy = clone(scenario);
     if (currentFrame?.positions) copy.balloons.forEach(h => { const p = currentFrame.positions[h.id]; if (p) Object.assign(h, p); });
-    // Display-only ERA5 grid cells. Manual regions are kept unchanged.
+    if (currentFrame?.manual_weather_regions) copy.weather_regions = currentFrame.manual_weather_regions;
+    // Time-dependent manual weather is computed by the backend physics snapshot.
     // Backend integrates the ERA5 raster independently (no duplicate attenuation).
     if (useEra5) copy.weather_regions = [...copy.weather_regions, ...historicalRegions];
     return copy;
@@ -246,8 +283,10 @@ export default function App() {
   const topologyLinks = useMemo(() => potentialLinks(visualScenario, currentFrame, !dirty), [visualScenario, currentFrame, dirty]);
   const selectedLink = topologyLinks.find(l => l.id === selectedId);
   const selected = nodes.find(n => n.id === selectedId) || scenario.demands.find(n => n.id === selectedId) || selectedLink;
-  const selectedType = selectedLink ? 'link' : selectedId?.startsWith('gs-') ? 'gs'
-    : selectedId?.startsWith('hap-') ? 'hap' : selectedId?.startsWith('weather-') ? 'weather' : 'demand';
+  const selectedType = selectedLink ? 'link'
+    : scenario.ground_stations.some(n=>n.id===selectedId) ? 'gs'
+    : scenario.balloons.some(n=>n.id===selectedId) ? 'hap'
+    : scenario.weather_regions.some(n=>n.id===selectedId) ? 'weather' : 'demand';
   const activeLinks = currentFrame?.links.filter(l => l.activated).length || 0;
   const qkpOnlyLinks = currentFrame?.links.filter(l => l.allocated && !l.activated).length || 0;
   const slotSolver = currentFrame?.optimizer;
@@ -258,6 +297,23 @@ export default function App() {
   const requested = currentFrame?.demands.reduce((n,d)=>n+d.requested_bps,0) ?? scenario.demands.reduce((n,d)=>n+d.rate_bps,0);
   const satisfaction = currentFrame && requested > 0 ? Math.round(100*served/requested) : null;
   const firstLink = currentFrame?.links.find(l=>l.target===selectedId || l.source===selectedId) || currentFrame?.links[0];
+  const builtinPreset=BUILTINS.experiments.find(p=>p.id===activeExperiment?.builtin?.id);
+  const moments=(builtinPreset && Number(scenario.config.slot_seconds)===Number(builtinPreset.scenario.config.slot_seconds)
+      && simulationHorizonSeconds(scenario)===simulationHorizonSeconds(builtinPreset.scenario))
+    ? (builtinPreset.milestones||[]).map(e=>({
+        ...e,
+        index:Math.min(computedSlots-1,Math.ceil(e.seconds/scenario.config.slot_seconds)),
+      })) : [];
+  const currentMoment=moments.find(e=>e.index===frameIndex) || null;
+  // Never compare cached 5h and new 24h tabs merely because both are tagged
+  // as the storm family.  Algorithms / QKP are the controlled differences.
+  const comparableBuiltins=experiments.filter(e=>
+    e.builtin?.family===activeExperiment?.builtin?.family &&
+    e.scenario?.config?.slot_seconds===scenario.config.slot_seconds &&
+    simulationHorizonSeconds(e.scenario)===simulationHorizonSeconds(scenario) &&
+    JSON.stringify(e.scenario.config.optical)===JSON.stringify(scenario.config.optical) &&
+    ['ground_stations','balloons','demands','weather_regions','link_overrides'].every(field=>
+      JSON.stringify(e.scenario[field]||[])===JSON.stringify(scenario[field]||[])));
 
   function patchScenario(mutator) {
     setScenario(old => { const next = clone(old); mutator(next); return next; });
@@ -266,12 +322,20 @@ export default function App() {
   }
   function modifyItem(id, field, value) {
     patchScenario(s=>{for(const group of ['ground_stations','balloons','weather_regions','demands']) {
-      const obj=s[group].find(o=>o.id===id); if(obj) {obj[field]=value; break;}
+      const obj=s[group].find(o=>o.id===id); if(obj) {
+        obj[field]=value;
+        if (group==='balloons' && obj.trajectory_id && (field==='lat'||field==='lon')) {
+          obj.trajectory_origin_mode='shifted';
+          obj.trajectory_start_lat=obj.lat; obj.trajectory_start_lon=obj.lon;
+        }
+        break;}
     }});
   }
   function onPositionChange(id, lat, lon) {
     patchScenario(s=>{const n=[...s.ground_stations,...s.balloons,...s.weather_regions].find(x=>x.id===id);
-      if (n) { n.lat=Math.max(-90,Math.min(90,lat)); n.lon=Math.max(-180,Math.min(180,lon)); }});
+      if (n) { n.lat=Math.max(-90,Math.min(90,lat)); n.lon=Math.max(-180,Math.min(180,lon));
+        if (n.trajectory_id) { n.trajectory_origin_mode='shifted';n.trajectory_start_lat=n.lat;n.trajectory_start_lon=n.lon; }
+      }});
   }
   function add(kind) {
     const base = Date.now().toString(36).slice(-6);
@@ -331,11 +395,38 @@ export default function App() {
       if (!response.ok) throw new Error(typeof payload.detail === 'string' ? payload.detail : 'Invalid trajectory');
       patchScenario(s=>{
         const hap=s.balloons.find(h=>h.id===hapId);
-        if (hap) Object.assign(hap, {trajectory_id:payload.trajectory_id,trajectory_name:payload.filename, trajectory_duration_seconds:payload.duration_seconds, ...payload.first});
+        if (hap) Object.assign(hap, {trajectory_id:payload.trajectory_id,trajectory_name:payload.filename, trajectory_duration_seconds:payload.duration_seconds, trajectory_origin_mode:'original',trajectory_start_lat:null,trajectory_start_lon:null,trajectory_source_lat:payload.first.lat,trajectory_source_lon:payload.first.lon, ...payload.first});
         s.config.slots = slotCount(s);
       });
     } catch(e) { setError(`Trajectory import: ${e.message}`); }
     finally {setUploadingTrajectory(false);}
+  }
+  function setTrajectoryOrigin(hapId, mode) {
+    patchScenario(s=>{
+      const h=s.balloons.find(h=>h.id===hapId);
+      if (!h || !h.trajectory_id)return;
+      h.trajectory_origin_mode=mode;
+      if(mode==='original'){
+        if(h.trajectory_source_lat!=null)h.lat=h.trajectory_source_lat;
+        if(h.trajectory_source_lon!=null)h.lon=h.trajectory_source_lon;
+        h.trajectory_start_lat=null;h.trajectory_start_lon=null;
+      }else{
+        h.trajectory_start_lat=h.lat;
+        h.trajectory_start_lon=h.lon;
+      }
+    });
+  }
+  function setTrajectoryStart(hapId, axis, value) {
+    patchScenario(s=>{
+      const h=s.balloons.find(h=>h.id===hapId);
+      if(!h||!Number.isFinite(value))return;
+      const field=axis==='lat'?'trajectory_start_lat':'trajectory_start_lon';
+      h[field]=value;
+      h.trajectory_origin_mode='shifted';
+      h[axis]=value;
+      if(h.trajectory_start_lat==null)h.trajectory_start_lat=h.lat;
+      if(h.trajectory_start_lon==null)h.trajectory_start_lon=h.lon;
+    });
   }
   function setEra5Date(value) {
     patchScenario(s=>{
@@ -518,7 +609,13 @@ export default function App() {
   const totalFrames=(!dirty ? result?.frames.length : computedSlots)||computedSlots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
 
-  return <div className="app-shell" data-ui-build="1.1.5" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+  if (activeScreen==='learning') return <div className="ll-page" data-ui-build="1.2.2-learning">
+    <header className="ll-topbar"><div className="ll-brand"><img src="/favicon.svg?v=115" alt="StratoQ icon"/><strong>Strato<span>Q</span></strong><small>SIMULATION STUDIO</small></div>
+      <nav aria-label="Main workspace"><button onClick={()=>setActiveScreen('studio')}>Network Studio</button><button className="selected" onClick={()=>setActiveScreen('learning')}><BrainCircuit size={16}/> Learning Lab</button></nav></header>
+    <LearningLab studioScenario={scenario} />
+  </div>;
+
+  return <div className="app-shell" data-ui-build="1.2.6" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
     <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
@@ -535,12 +632,37 @@ export default function App() {
             <button className="workspace-rename" onClick={()=>renameExperiment(activeId)} title="Rename experiment" aria-label="Rename experiment"><Pencil size={13}/></button></div>
           <div className="workspace-actions"><button onClick={createExperiment}><Plus size={13}/> New</button>
             <button onClick={duplicateExperiment} title="Duplicate current experiment"><Copy size={13}/> Duplicate</button></div>
+          <div className="builtin-launcher">
+            <label htmlFor="builtin-select">Built-in showcase experiments</label>
+            <select id="builtin-select" defaultValue="" onChange={e=>{if(e.target.value)addBuiltinExperiment(e.target.value);e.target.value='';}}>
+              <option value="">Open a built-in experiment…</option>
+              {BUILTINS.experiments.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}
+            </select>
+            <button type="button" onClick={replaceInitialExamples}>Replace tabs with showcase set</button>
+            <small>Each preset is editable. The three corridor cases share the same inputs; the two storm cases differ only in QKP availability.</small>
+          </div>
           <div className="workspace-tabs" role="tablist" aria-label="Experiments">
             {experiments.map(e=><div className={`workspace-tab ${e.id===activeId?'active':''}`} key={e.id}>
               <button role="tab" aria-selected={e.id===activeId} onClick={()=>changeExperiment(e.id)} title={e.name}>{e.name}</button>
               <button className="tab-close" aria-label={`Close ${e.name}`} onClick={()=>closeExperiment(e.id)}><X size={12}/></button>
             </div>)}
           </div>
+          {activeExperiment?.builtin && <details className="builtin-comparison">
+            <summary>Measured benchmark comparison <ChevronDown size={13}/></summary>
+            {comparableBuiltins.map(e=>{
+              const record=e.id===activeId?result:e.result;
+              return <div key={e.id} className="builtin-comparison-row"><span>{e.name.replace(/^\d+ · /,'')}</span><strong>{record?.summary ? `${(100*Number(record.summary.total_satisfaction||0)).toFixed(1)}%` : 'Not run'}</strong></div>;
+            })}
+            {activeExperiment.builtin.family==='storm' && comparableBuiltins.map(e=>{
+              const record=e.id===activeId?result:e.result;
+              const sum=record?.summary;
+              return sum?<div key={`${e.id}-weather`} className="builtin-comparison-row">
+                <span>{e.name.includes('disabled')?'No QKP':'With QKP'} · storm window</span>
+                <strong>{sum.weather_window_satisfaction>=0?`${(100*sum.weather_window_satisfaction).toFixed(1)}%`:'—'} · {fmtKeys(sum.total_qkp_drawn_link_bits)} QKP draw</strong>
+              </div>:null;
+            })}
+            <small>Only matching networks, demand/weather schedules, trajectories and time grids are compared. QKP draw counts link-key bits, not end-to-end delivered bits.</small>
+          </details>}
         </div></details>
         <div className="side-divider"/>
         <details className="section-pad collapsible-block">
@@ -620,13 +742,13 @@ export default function App() {
     <main className="main-panel">
       <header className="topbar">
         <div className="topbar-identity"><button className="panel-toggle" onClick={()=>setLeftOpen(v=>!v)} title={leftOpen?'Collapse workspace':'Expand workspace'}>{leftOpen?<PanelLeftClose size={18}/>:<PanelLeftOpen size={18}/>}</button><span className="topbar-current">{activeExperiment?.name}</span></div>
-        <div className="topbar-right">
-          <details className="header-file-menu">
+        <div className="topbar-right"><button className="ll-enter-button" onClick={()=>setActiveScreen('learning')}><BrainCircuit size={16}/> Learning Lab</button>
+          <details ref={filesMenuRef} className="header-file-menu">
             <summary>Files <ChevronDown size={14}/></summary>
             <div className="header-file-options">
-              <button onClick={()=>importRef.current?.click()}><ArrowUpFromLine size={14}/> Import experiment / workspace</button>
-              <button onClick={()=>downloadJSON('stratoq-experiment.json',scenario)}><ArrowDownToLine size={14}/> Export experiment</button>
-              <button onClick={exportWorkspace}><ArrowDownToLine size={14}/> Export workspace</button>
+              <button onClick={()=>{filesMenuRef.current.open=false;importRef.current?.click();}}><ArrowUpFromLine size={14}/> Import experiment / workspace</button>
+              <button onClick={()=>{filesMenuRef.current.open=false;downloadJSON('stratoq-experiment.json',scenario);}}><ArrowDownToLine size={14}/> Export experiment</button>
+              <button onClick={()=>{filesMenuRef.current.open=false;exportWorkspace();}}><ArrowDownToLine size={14}/> Export workspace</button>
             </div>
           </details>
           <button className="panel-toggle" onClick={()=>setRightOpen(v=>!v)} title={rightOpen?'Collapse inspector':'Expand inspector'}>{rightOpen?<PanelRightClose size={18}/>:<PanelRightOpen size={18}/>}</button>
@@ -682,6 +804,30 @@ export default function App() {
             value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);}}
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
             <span>{toClock(totalFrames*scenario.config.slot_seconds)}</span></div>
+          {builtinPreset?.family==='storm' && scenario.config.horizon_seconds===18000 && <div className="showcase-update-note">
+            <span>This is a saved five-hour example from v1.2.5. The new preset uses the full 24-hour trajectory.</span>
+            <button type="button" onClick={()=>addBuiltinExperiment(builtinPreset.id)}>Open updated 24h preset</button>
+          </div>}
+          {moments.length>0 && <div className="showcase-moments" aria-label="Scenario key moments">
+            <div className="showcase-moments-list"><strong>Key moments</strong>
+              {moments.map((moment,i)=><button type="button" key={`${moment.seconds}-${i}`}
+                  className={frameIndex===moment.index?'is-current':''}
+                  title={`${moment.title}: ${moment.why}`}
+                  disabled={!result||dirty}
+                  onClick={()=>{setPlaying(false);setFrameIndex(moment.index);setExpandedMoment(null);}}>
+                <span>Slot {moment.index+1} · {toClock(moment.index*scenario.config.slot_seconds)}</span> {moment.title}
+              </button>)}
+            </div>
+            {currentMoment && <div className="showcase-moment-note">
+              <span><b>{currentMoment.title}:</b> {currentMoment.why}
+                {currentFrame && <small className="showcase-measured">Measured this slot: {requested>0 ? `${(100*served/requested).toFixed(1)}%` : '—'} demand served · {fmtKeys(currentFrame.qkp_drawn_link_bits||0)} QKP link-key draw</small>}
+              </span>
+              <button type="button" onClick={()=>setExpandedMoment(v=>v===currentMoment.seconds?null:currentMoment.seconds)}>
+                {expandedMoment===currentMoment.seconds?'Less':'Read more'}
+              </button>
+              {expandedMoment===currentMoment.seconds && <p>{currentMoment.details}</p>}
+            </div>}
+          </div>}
           <div className="timeline-footer"><span className="timeline-note">Frame {frameIndex+1} / {totalFrames}{dirty?' · changes pending':''}</span></div>
         </div>
       </div>
@@ -799,6 +945,14 @@ export default function App() {
                   </select></label>}
 
               </div>}
+              {selectedType==='weather' && <details className="weather-time-settings"><summary>Time-varying weather profile</summary>
+                <div className="field-grid">
+                  <Numeric label="Starts at" value={(selected.active_from_seconds||0)/3600} min={0} max={24} step={.25} unit="h" onChange={v=>modifyItem(selected.id,'active_from_seconds',Math.round(v*3600))}/>
+                  <Numeric label="Ends at" value={(selected.active_until_seconds??86400)/3600} min={0} max={24} step={.25} unit="h" onChange={v=>modifyItem(selected.id,'active_until_seconds',Math.round(v*3600))}/>
+                  <Numeric label="Fade in/out" value={(selected.ramp_seconds||0)/60} min={0} max={720} step={5} unit="min" onChange={v=>modifyItem(selected.id,'ramp_seconds',Math.round(v*60))}/>
+                  <Numeric label="Eastward drift" value={selected.drift_lon_deg_per_hour||0} min={-2} max={2} step={.01} unit="°/h" onChange={v=>modifyItem(selected.id,'drift_lon_deg_per_hour',v)}/>
+                </div><small>Deterministic demo weather, not ERA5. Existing fog/rain optical laws are applied to every time-slot snapshot.</small>
+              </details>}
               {selectedType==='weather'&&<div className="field-grid"><Numeric label="Region radius" value={selected.radius_km} min={1} max={500} unit="km" onChange={v=>modifyItem(selected.id,'radius_km',v)} />
                 <Numeric label="Optional extra loss" value={selected.attenuation_db} min={0} max={40} unit="dB" onChange={v=>modifyItem(selected.id,'attenuation_db',v)}/></div>}
               {selectedType==='hap' && <div className="trajectory-upload">
@@ -811,6 +965,18 @@ export default function App() {
               </div>}
               {selectedType==='hap' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.target===selected.id).length}</b></div>}
               {selectedType==='hap' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.target===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.target===selected.id&&l.allocated&&!l.activated).length}</b></div>}
+              {selectedType==='hap' && selected.trajectory_id && <div className="trajectory-origin-controls">
+                <label className="field-label"><span>Trajectory start (geographic translation)</span>
+                  <select value={selected.trajectory_origin_mode||'original'} onChange={e=>setTrajectoryOrigin(selected.id,e.target.value)}>
+                    <option value="original">Original segment first point</option>
+                    <option value="shifted">Shift first point to selected location</option>
+                  </select></label>
+                {selected.trajectory_origin_mode==='shifted'&&<div className="field-grid">
+                  <Numeric label="Target start latitude" value={selected.trajectory_start_lat??selected.lat} min={-90} max={90} step={.001} onChange={v=>setTrajectoryStart(selected.id,'lat',v)}/>
+                  <Numeric label="Target start longitude" value={selected.trajectory_start_lon??selected.lon} min={-180} max={180} step={.001} onChange={v=>setTrajectoryStart(selected.id,'lon',v)}/>
+                </div>}
+                <small>Translates the full track while preserving relative motion and altitude. Dragging a trajectory HAP switches to shifted mode; no wind recalculation is performed.</small>
+              </div>}
               {selectedType==='hap' && selected.trajectory_id && currentFrame?.positions?.[selected.id] && <div className="selection-stat"><span>Current HAP position (trajectory)</span><b>{currentFrame.positions[selected.id].lat?.toFixed(4)}°, {currentFrame.positions[selected.id].lon?.toFixed(4)}°</b></div>}
               {selectedType==='gs' && <div className="selection-stat"><span>Potential optical links</span><b>{topologyLinks.filter(l=>l.source===selected.id).length}</b></div>}
               {selectedType==='gs' && currentFrame && <div className="selection-stat"><span>Slot {frameIndex+1}: optical / QKP-only</span><b>{topologyLinks.filter(l=>l.source===selected.id&&l.activated).length} / {topologyLinks.filter(l=>l.source===selected.id&&l.allocated&&!l.activated).length}</b></div>}
@@ -824,6 +990,8 @@ export default function App() {
           <div className="field-grid"><label className="field-label"><span>Time slots · calculated</span><div className="number-shell"><strong>{computedSlots.toLocaleString()}</strong></div></label>
             <Numeric label="Slot duration" value={scenario.config.slot_seconds} unit="sec" min={10} max={86400} step={10} onChange={v=>patchScenario(s=>{s.config.slot_seconds=Math.max(10,v);s.config.slots=slotCount(s);})} /></div>
           <div className="compact-note">{horizonHours.toFixed(1)}h · {scenario.balloons.some(h=>h.trajectory_id)?'trajectory':'24h default'}</div>
+          <label className="field-label"><span>Experiment horizon · hours</span><div className="number-shell"><input type="number" min={.1} max={24} step={.5} value={(scenario.config.horizon_seconds??simulationHorizonSeconds(scenario))/3600} onChange={e=>patchScenario(s=>{const h=Math.max(360,Math.min(86400,Math.round(Number(e.target.value)*3600)||360));s.config.horizon_seconds=h;s.config.slots=slotCount(s);})}/><i>h</i></div></label>
+          {scenario.config.allocation_mode==='optimal' && <label className="era5-switch"><input type="checkbox" checked={scenario.config.qkp_enabled!==false} onChange={e=>patchScenario(s=>s.config.qkp_enabled=e.target.checked)}/><span>Enable QKP storage (for storm comparison)</span></label>}
           <div className="allocator-picker">
             <label className="field-label"><span>Resource allocation algorithm</span>
               <select value={['scar_q','mcr_q','optimal'].includes(scenario.config.allocation_mode) ? scenario.config.allocation_mode : 'scar_q'}

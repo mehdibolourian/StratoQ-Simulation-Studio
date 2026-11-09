@@ -23,3 +23,6 @@ netCDF4>=1.6,<2
 
 # Solver for SCAR-Q, MCR-Q, and the full-horizon offline MILP.
 gurobipy>=11,<14
+
+# Learning Lab: real PPO actor-critic and optimizer; installed by the existing one-command launcher.
+torch>=2.2,<3; python_version == "3.10"

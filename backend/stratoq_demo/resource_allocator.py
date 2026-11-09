@@ -35,10 +35,10 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
     # Each link buffer represents the same shared key material at both ends.
     # It is not two independently generated inventories.
     max_storage = {
-        link["id"]: min(
+        link["id"]: (min(
             capacity_by_gs[link["source"]] / max(1, gs_degree[link["source"]]),
             hap_capacity[link["target"]] / max(1, hap_degree[link["target"]]),
-        ) for link in candidates
+        ) if scenario.config.qkp_enabled else 0.) for link in candidates
     }
     buffers = {link["id"]: 0.0 for link in candidates}
     frames: list[SimulationFrame] = []
@@ -50,6 +50,10 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
     gurobi_version = "unknown"
     profiles = demand_rates(scenario, slots, duration)
     total_served_exact = 0.
+    total_weather_served = 0.
+    total_weather_requested = 0.
+    total_qkp_drawn_link_bits = 0.
+    slots_with_qkp_draw = 0
     offline_slots = None
     offline_summary = {}
     if scenario.config.allocation_mode == 'optimal':
@@ -152,7 +156,17 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
                 if hap_id and served.get(demand.id, 0.) > 1e-7:
                     for lid in (f'{demand.source}:{hap_id}', f'{demand.target}:{hap_id}'):
                         link_use[lid] += served[demand.id]
-        total_served_exact += sum(max(0.,v) for v in served.values()) * duration
+        delivered_slot_bits = sum(max(0.,v) for v in served.values()) * duration
+        total_served_exact += delivered_slot_bits
+        # Link-key QKP draw counts each used link's key bits separately.
+        # A two-hop delivered end-to-end key normally consumes two link keys.
+        qkp_drawn_link_bits = duration * sum(max(0.,v) for v in stored.values())
+        total_qkp_drawn_link_bits += qkp_drawn_link_bits
+        if qkp_drawn_link_bits > 1e-7:
+            slots_with_qkp_draw += 1
+        if slot_scenario.weather_regions:
+            total_weather_served += delivered_slot_bits
+            total_weather_requested += duration * sum(d.rate_bps for d in slot_scenario.demands)
         demand_states = []
         for d in slot_scenario.demands:
             achieved = max(0., served.get(d.id,0.))
@@ -175,7 +189,7 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
         ) for link in candidates]
         # Aggregate the endpoint copies of the shared per-link key inventories.
         # HAP/GS totals are logical endpoint views (not additive physical bits).
-        node_cap = {**capacity_by_gs, **hap_capacity}
+        node_cap = {**capacity_by_gs, **hap_capacity} if scenario.config.qkp_enabled else {n.id: 0. for n in (*scenario.ground_stations, *scenario.balloons)}
         qkp_states = []
         for node_id, cap in node_cap.items():
             stored = sum(buffers[link["id"]] for link in candidates
@@ -183,15 +197,17 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
             qkp_states.append(QKPState(
                 node_id=node_id, stored_bits=round(stored, 1),
                 capacity_bits=round(cap, 1),
-                fill_fraction=round(min(1.0, stored / cap), 5)))
+                fill_fraction=round(min(1.0, stored / cap), 5) if cap > 0 else 0.))
         frames.append(SimulationFrame(
             slot=slot, time_seconds=slot * duration, positions=positions,
             weather_by_hap=weather_by_hap,
             historical_weather_regions=historical_regions,
+            manual_weather_regions=[w.model_dump() for w in slot_scenario.weather_regions],
             historical_weather_metadata=historical_metadata,
             links=link_states, demands=demand_states, qkps=qkp_states,
             stored_bits_total=round(sum(buffers.values()), 1),
             served_bps_total=round(sum(d.served_bps for d in demand_states), 2),
+            qkp_drawn_link_bits=round(qkp_drawn_link_bits, 2),
             optimizer=audit))
         if progress: progress({"stage":"allocation", "total":slots,"completed":slot+1})
 
@@ -214,6 +230,12 @@ def allocate(scenario: Scenario, progress=None) -> SimulationResult:
         "algorithm": scenario.config.allocation_mode,
         "mcr_samples": scenario.config.mcr_samples if scenario.config.allocation_mode == 'mcr_q' else 0,
         "allocator_seed": scenario.config.allocator_seed,
+        "qkp_enabled": int(scenario.config.qkp_enabled),
+        "total_qkp_drawn_link_bits": round(total_qkp_drawn_link_bits, 2),
+        "slots_with_qkp_draw": slots_with_qkp_draw,
+        "weather_window_served_bits": round(total_weather_served, 2),
+        "weather_window_requested_bits": round(total_weather_requested, 2),
+        "weather_window_satisfaction": round(total_weather_served/total_weather_requested, 6) if total_weather_requested else -1.,
         "gurobi_slot_solves": solver_runs,
         "gurobi_optimized_models": solver_runs,
         "gurobi_runtime_seconds": round(gurobi_seconds, 6),
