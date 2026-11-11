@@ -1,20 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity, ArrowDownToLine, ArrowUpFromLine, ArrowRight, Box, Check, ChevronDown, CircleHelp,
-  Cloud, CloudRain, CalendarDays, Crosshair, Gauge, Layers3, Map, Maximize2, MousePointer2,
+  Cloud, CloudRain, CalendarDays, Crosshair, Eye, EyeOff, Gauge, Layers3, Map, Maximize2, MousePointer2,
   Pause, Play, Plus, RadioTower, RefreshCcw, Rotate3D, SatelliteDish,
   Settings2, SlidersHorizontal, Sparkles, Trash2, Wifi, WifiOff, X, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, GripVertical, Pencil, Copy, BrainCircuit,
 } from 'lucide-react';
 import Network3D from './components/Network3D.jsx';
 import GeoMap from './components/GeoMap.jsx';
 import LearningLab from './components/LearningLab.jsx';
+import {StoryRail, StoryDialog} from './components/ShowcaseStory.jsx';
+import {SHOWCASE_STORIES, buildStoryMoments} from './lib/showcaseStory.js';
+import {matchingQkpInputs, qkpComparisonDelta} from './lib/qkpComparison.js';
+import {upgradeLegacyShowcase} from './lib/curatedWorkspace.js';
 import { INITIAL_SCENARIO } from './lib/sample.js';
 import BUILTINS from './lib/builtinExperiments.json';
 import { CENTER, flatDistance } from './lib/geo.js';
 import { potentialLinks } from './lib/topology.js';
+import {allocationsForLink, demandColor, linkKeyMode} from './lib/linkVisuals.js';
 import { demandSeries, simulationHorizonSeconds, slotCount } from './lib/demandProfiles.js';
 
-const STUDIO_VERSION = '1.0.5'; // Stable backend API handshake; UI showcase v1.2.6
+const STUDIO_VERSION = '1.0.5'; // Stable backend API handshake; UI showcase v1.3.2
 const EMPTY_WEATHER = [];
 const clone = (obj) => structuredClone(obj);
 function migrateAllocator(scenario) {
@@ -69,9 +74,9 @@ function ButtonRow({ icon: Icon, text, count, onClick, accent }) {
   return <button className="add-row" onClick={onClick}><span className={`add-row-icon ${accent}`}><Icon size={17} /></span>
     <span>{text}</span><span className="count">{count}</span><Plus size={14} className="add-small" /></button>;
 }
-function EntityItem({ item, icon: Icon, subtitle, selected, onClick }) {
+function EntityItem({ item, icon: Icon, subtitle, selected, onClick, color }) {
   return <button className={`entity-item ${selected?'selected':''}`} onClick={onClick}>
-    <span className="entity-icon"><Icon size={16}/></span><span className="entity-copy"><b>{item.name}</b><small>{subtitle}</small></span>
+    <span className="entity-icon" style={color?{color}:undefined}><Icon size={16}/></span><span className="entity-copy"><b>{item.name}</b><small>{subtitle}</small></span>
     <span className="entity-indicator" /></button>;
 }
 function downloadJSON(filename, data) {
@@ -80,10 +85,14 @@ function downloadJSON(filename, data) {
   a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 200);
 }
 
+// Optional real historical weather scenario, using the validated bundled
+// Open-Meteo ERA5 NetCDF, not invented rain or a future weather forecast.
+const HISTORICAL_WEATHER={day:'2024-06-21',id:'3dc42073ef98e69faf58'};
 const WORKSPACE_KEY = 'stratoq.workspace.v104';
 const makeExperiment = (scenario, name='New experiment') => ({
   id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())+Math.random(),
-  name, scenario: migrateAllocator(scenario), selectedId: null, result: null, dirty: true, frameIndex: 0,
+  name, scenario: migrateAllocator(scenario), baselineScenario: migrateAllocator(scenario),
+  selectedId: null, result: null, dirty: true, frameIndex: 0,
 });
 const makeBuiltin = (preset) => ({
   ...makeExperiment(preset.scenario,preset.title),
@@ -93,11 +102,14 @@ const makeBuiltin = (preset) => ({
 function readWorkspace() {
   try {
     const stored = JSON.parse(localStorage.getItem(WORKSPACE_KEY) || 'null');
-    if (stored?.experiments?.length && stored.experiments.every(e => e.scenario?.config && Array.isArray(e.scenario.ground_stations))) {
-      return {experiments:stored.experiments.map(e => ({...e, scenario:migrateAllocator(e.scenario), result:null, dirty:true})),
-        activeId:stored.experiments.some(e=>e.id===stored.activeId) ? stored.activeId : stored.experiments[0].id};
+    if (stored?.experiments?.length && stored.experiments.every(e => isScenario(e.scenario))) {
+      const restored=stored.experiments.map(e=>({...e,scenario:migrateAllocator(e.scenario),
+        baselineScenario:isScenario(e.baselineScenario)?migrateAllocator(e.baselineScenario):null,
+        result:null,dirty:true}));
+      const activeId=restored.some(e=>e.id===stored.activeId)?stored.activeId:restored[0].id;
+      return upgradeLegacyShowcase(restored,activeId,BUILTINS.experiments,makeBuiltin,migrateAllocator,isScenario) || {experiments:restored,activeId};
     }
-  }catch(_){}
+  }catch(err){console.warn('Unable to restore Studio workspace:',err);}
   const firsts=BUILTINS.experiments.map(makeBuiltin);
   return {experiments:firsts,activeId:firsts[0].id};
 }
@@ -121,13 +133,16 @@ export default function App() {
   const [rightOpen, setRightOpen] = useState(true);
   const importRef=useRef(null);
   const filesMenuRef=useRef(null);
-  const [expandedMoment,setExpandedMoment]=useState(null);
+  const [storyOpen,setStoryOpen]=useState(false);
+  const [timelineExpanded,setTimelineExpanded]=useState(false);
+  const [selectedMomentId,setSelectedMomentId]=useState(null);
   const workspaceRef=useRef(null);
   const resizeRef=useRef(null);
   const latestSnapshot=useRef(null);
   const latestExperiments=useRef(experiments);
   const activeIdRef=useRef(activeId);
   const [mode, setMode] = useState('3d');
+  const [showLabels, setShowLabels] = useState(true);
   const [dragMode, setDragMode] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [sceneKey, setSceneKey] = useState(0);
@@ -192,7 +207,7 @@ export default function App() {
     return latestExperiments.current.map(e=>e.id===activeIdRef.current ? {...e,...snap} : e);
   }
   function loadExperiment(exp) {
-    setExpandedMoment(null);
+    setStoryOpen(false);setSelectedMomentId(null);
     ++requestId.current; ++weatherRequestId.current;
     setScenario(migrateAllocator(exp.scenario));setSelectedId(exp.selectedId || null);
     setResult(exp.result || null);setDirty(exp.dirty ?? true);setFrameIndex(exp.frameIndex || 0);
@@ -214,18 +229,43 @@ export default function App() {
     const preset=BUILTINS.experiments.find(p=>p.id===presetId);
     if(!preset)return;
     const saved=saveCurrent();
-    // Reopening the same built-in creates an independent editable instance.
+    // Reuse already-open unmodified presets rather than creating duplicate tabs.
+    const current=saved.find(e=>e.builtin?.id===preset.id &&
+      JSON.stringify(e.scenario)===JSON.stringify(migrateAllocator(preset.scenario)));
+    if(current){ if(current.id!==activeIdRef.current){setExperiments(saved);setActiveId(current.id);loadExperiment(current);}return; }
     const next=makeBuiltin(preset);
     setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
   }
+  function switchQkpCase() {
+    const target=activeExperiment?.builtin?.id==='qkp-disabled'?'qkp-enabled':'qkp-disabled';
+    const counterpart=BUILTINS.experiments.find(p=>p.id===target);
+    if(!counterpart)return;
+    const saved=saveCurrent();
+    const existing=saved.find(e=>e.builtin?.id===target &&
+      matchingQkpInputs(e.scenario,scenario) && e.scenario.config.qkp_enabled===counterpart.scenario.config.qkp_enabled);
+    if(existing){setExperiments(saved);setActiveId(existing.id);loadExperiment(existing);}
+    else addBuiltinExperiment(target);
+  }
+  function createHistoricalVariant() {
+    const saved=saveCurrent();
+    const copy=clone(scenario);
+    copy.weather_regions=[]; // Never combine scripted storm with ERA5 silently.
+    copy.config.weather_source='era5';
+    copy.config.era5_date=HISTORICAL_WEATHER.day;
+    copy.config.era5_dataset_id=HISTORICAL_WEATHER.id;
+    const next=makeExperiment(copy,`${activeExperiment.name} · ERA5 ${HISTORICAL_WEATHER.day}`);
+    next.selectedId=selectedId;
+    setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
+  }
   function replaceInitialExamples() {
-    if (!window.confirm('Replace the current tabs with the five built-in showcase experiments? Export your workspace first if you want to keep it.'))return;
+    if (!window.confirm('Replace all tabs with the four matched 24-hour demos (SCAR-Q, MCR-Q, Optimal QKP on, Optimal QKP off)? Export your workspace first to preserve edits.'))return;
     const next=BUILTINS.experiments.map(makeBuiltin);
     setExperiments(next);setActiveId(next[0].id);loadExperiment(next[0]);
   }
   function duplicateExperiment() {
     const saved=saveCurrent();const current=saved.find(e=>e.id===activeIdRef.current);
-    const next={...makeExperiment(current.scenario,`${current.name} copy`),selectedId:current.selectedId};
+    const next={...makeExperiment(current.scenario,`${current.name} copy`),selectedId:current.selectedId,
+      builtin:current.builtin ? clone(current.builtin) : null};
     setExperiments([...saved,next]);setActiveId(next.id);loadExperiment(next);
   }
   function renameExperiment(id) {
@@ -248,7 +288,8 @@ export default function App() {
       const payload=JSON.parse(await file.text());
       if(payload?.format==='stratoq-workspace' && Array.isArray(payload.experiments) && payload.experiments.length &&
         payload.experiments.every(e=>isScenario(e.scenario))) {
-        const restored=payload.experiments.map(e=>({...makeExperiment(e.scenario,e.name || 'Experiment'),id:e.id || makeExperiment(e.scenario).id, selectedId:e.selectedId || null,builtin:e.builtin || null}));
+        const restored=payload.experiments.map(e=>({...makeExperiment(e.scenario,e.name || 'Experiment'),id:e.id || makeExperiment(e.scenario).id, selectedId:e.selectedId || null,builtin:e.builtin || null,
+          baselineScenario:isScenario(e.baselineScenario)?migrateAllocator(e.baselineScenario):migrateAllocator(e.scenario)}));
         const chosen=restored.find(e=>e.id===payload.activeId)||restored[0];
         setExperiments(restored);setActiveId(chosen.id);loadExperiment(chosen);
       } else if(isScenario(payload)) {
@@ -298,22 +339,48 @@ export default function App() {
   const satisfaction = currentFrame && requested > 0 ? Math.round(100*served/requested) : null;
   const firstLink = currentFrame?.links.find(l=>l.target===selectedId || l.source===selectedId) || currentFrame?.links[0];
   const builtinPreset=BUILTINS.experiments.find(p=>p.id===activeExperiment?.builtin?.id);
-  const moments=(builtinPreset && Number(scenario.config.slot_seconds)===Number(builtinPreset.scenario.config.slot_seconds)
-      && simulationHorizonSeconds(scenario)===simulationHorizonSeconds(builtinPreset.scenario))
-    ? (builtinPreset.milestones||[]).map(e=>({
-        ...e,
-        index:Math.min(computedSlots-1,Math.ceil(e.seconds/scenario.config.slot_seconds)),
-      })) : [];
-  const currentMoment=moments.find(e=>e.index===frameIndex) || null;
-  // Never compare cached 5h and new 24h tabs merely because both are tagged
-  // as the storm family.  Algorithms / QKP are the controlled differences.
-  const comparableBuiltins=experiments.filter(e=>
+  // All four demos use the same physical scenario; the two Optimal cases
+  // differ only in whether QKP storage is enabled.
+  const storyPresetId=SHOWCASE_STORIES[activeExperiment?.builtin?.id] ? activeExperiment.builtin.id : null;
+  const isQkpStudy=['qkp-enabled','qkp-disabled'].includes(storyPresetId);
+  // Scenario story labels are always visible, even before the first simulation
+  // or when a saved tab uses a different slot length.  Measured markers only
+  // use actual solver frames; they never manufacture allocation outcomes.
+  const story=SHOWCASE_STORIES[storyPresetId];
+  const moments=useMemo(()=>buildStoryMoments(storyPresetId,scenario,!dirty?result:null),
+    [storyPresetId,scenario,dirty,result]);
+  const storyChanged=!!builtinPreset && (
+    ['slot_seconds','horizon_seconds','allocation_mode','qkp_enabled'].some(k=>
+      scenario.config?.[k]!==builtinPreset.scenario.config?.[k]) ||
+    ['balloons','ground_stations','demands','weather_regions'].some(k=>
+      JSON.stringify(scenario[k]||[])!==JSON.stringify(builtinPreset.scenario[k]||[])));
+  const pinnedMoment=moments.find(m=>m.id===selectedMomentId);
+  const currentMoment=(pinnedMoment && frameIndex>=pinnedMoment.fromIndex && frameIndex<=pinnedMoment.toIndex ? pinnedMoment : null) ||
+    moments.find(m=>m.fromIndex<=frameIndex && m.toIndex>=frameIndex) || null;
+  const storyMomentId=currentMoment?.id||null;
+  const jumpToStoryMoment=(moment)=>{
+    setPlaying(false);setFrameIndex(moment.index);setSelectedMomentId(moment.id);
+  };
+  // Compare only physically matched, completed scenarios; do not mix legacy tabs.
+  const matchedExperiments=experiments.map(e=>e.id===activeId?{...e,scenario,dirty,result}:e).filter(e=>
     e.builtin?.family===activeExperiment?.builtin?.family &&
-    e.scenario?.config?.slot_seconds===scenario.config.slot_seconds &&
-    simulationHorizonSeconds(e.scenario)===simulationHorizonSeconds(scenario) &&
-    JSON.stringify(e.scenario.config.optical)===JSON.stringify(scenario.config.optical) &&
-    ['ground_stations','balloons','demands','weather_regions','link_overrides'].every(field=>
-      JSON.stringify(e.scenario[field]||[])===JSON.stringify(scenario[field]||[])));
+    (isQkpStudy ? matchingQkpInputs(e.scenario,scenario) : (
+      (e.scenario.config.qkp_enabled!==false)===(scenario.config.qkp_enabled!==false) &&
+      e.scenario?.config?.slot_seconds===scenario.config.slot_seconds &&
+      simulationHorizonSeconds(e.scenario)===simulationHorizonSeconds(scenario) &&
+      JSON.stringify(e.scenario.config.optical)===JSON.stringify(scenario.config.optical) &&
+      ['ground_stations','balloons','demands','weather_regions','link_overrides'].every(field=>
+        JSON.stringify(e.scenario[field]||[])===JSON.stringify(scenario[field]||[])))));
+  // One row per QKP mode; never compare stale or physically different inputs.
+  const comparableBuiltins=isQkpStudy ? [true,false].map(on=>
+    matchedExperiments.find(e=>e.id===activeId && (e.scenario.config.qkp_enabled!==false)===on) ||
+    matchedExperiments.find(e=>(e.scenario.config.qkp_enabled!==false)===on && !e.dirty && e.result?.summary) ||
+    matchedExperiments.find(e=>(e.scenario.config.qkp_enabled!==false)===on)
+  ).filter(Boolean) : matchedExperiments;
+  const comparedSummary=(e)=>e && (e.id===activeId ? (!dirty?result?.summary:null) : (!e.dirty?e.result?.summary:null));
+  const onSummary=comparedSummary(comparableBuiltins.find(e=>e.scenario.config.qkp_enabled!==false));
+  const offSummary=comparedSummary(comparableBuiltins.find(e=>e.scenario.config.qkp_enabled===false));
+  const qkpDelta=isQkpStudy ? qkpComparisonDelta(onSummary,offSummary) : null;
 
   function patchScenario(mutator) {
     setScenario(old => { const next = clone(old); mutator(next); return next; });
@@ -602,9 +669,16 @@ export default function App() {
     setPlaying(true);
   }
   function reset() {
-    const resetCase=migrateAllocator(INITIAL_SCENARIO);
-    setScenario(resetCase); setSelectedId('hap-1'); setFrameIndex(0); setSceneKey(k=>k+1);
-    setPlaying(false); setDirty(true); setEra5Preview([]);setEra5Meta(null);setEra5Job(null);runSim(resetCase);
+    // The reset button restores the current tab's original scenario. The
+    // 2-GS/1-HAP template is ONLY used for creating a new experiment.
+    const original=activeExperiment?.baselineScenario || builtinPreset?.scenario || activeExperiment?.scenario || scenario;
+    const resetCase=migrateAllocator(original);
+    const first=resetCase.balloons[0]?.id || resetCase.ground_stations[0]?.id || null;
+    ++requestId.current; // Cancel stale simulation/poll responses before resetting.
+    setScenario(resetCase);setSelectedId(first);setFrameIndex(0);setSceneKey(k=>k+1);
+    setPlaying(false);setResult(null);setDirty(true);setRunning(false);setPhysicsProgress(null);
+    setEra5Preview([]);setEra5Meta(null);setEra5Job(null);setError('');
+    setExperiments(current=>current.map(e=>e.id===activeId?{...e,scenario:resetCase,selectedId:first,result:null,dirty:true,frameIndex:0}:e));
   }
   const totalFrames=(!dirty ? result?.frames.length : computedSlots)||computedSlots;
   const selectedDemand=result?.frames[frameIndex]?.demands.find(d=>d.id===selectedId);
@@ -615,7 +689,7 @@ export default function App() {
     <LearningLab studioScenario={scenario} />
   </div>;
 
-  return <div className="app-shell" data-ui-build="1.2.6" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
+  return <div className="app-shell" data-ui-build="1.2.7" style={{gridTemplateColumns:`${leftOpen?`${leftWidth}px`:'0px'} minmax(0,1fr) ${rightOpen?`${rightWidth}px`:'0px'}`}}>
     <input ref={importRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <input ref={workspaceRef} type="file" accept=".json,application/json" hidden onChange={e=>{importFile(e.target.files?.[0]);e.target.value='';}}/>
     <aside className={`left-panel ${leftOpen?"":"is-collapsed"}`}>
@@ -638,8 +712,8 @@ export default function App() {
               <option value="">Open a built-in experiment…</option>
               {BUILTINS.experiments.map(p=><option key={p.id} value={p.id}>{p.title}</option>)}
             </select>
-            <button type="button" onClick={replaceInitialExamples}>Replace tabs with showcase set</button>
-            <small>Each preset is editable. The three corridor cases share the same inputs; the two storm cases differ only in QKP availability.</small>
+            <button type="button" onClick={replaceInitialExamples}>Reset to four demos</button>
+            <small>Four 24-hour cases · one network, one balloon flight, one weather timeline. Compare the algorithms first, then toggle QKP for Optimal.</small>
           </div>
           <div className="workspace-tabs" role="tablist" aria-label="Experiments">
             {experiments.map(e=><div className={`workspace-tab ${e.id===activeId?'active':''}`} key={e.id}>
@@ -647,21 +721,30 @@ export default function App() {
               <button className="tab-close" aria-label={`Close ${e.name}`} onClick={()=>closeExperiment(e.id)}><X size={12}/></button>
             </div>)}
           </div>
-          {activeExperiment?.builtin && <details className="builtin-comparison">
-            <summary>Measured benchmark comparison <ChevronDown size={13}/></summary>
+          {activeExperiment?.builtin && <details className="builtin-comparison" open={isQkpStudy}>
+            <summary>{isQkpStudy?'QKP on vs off · results':'Algorithms · results'} <ChevronDown size={13}/></summary>
+            {isQkpStudy && <div className="qkp-control-actions">
+              <button type="button" onClick={switchQkpCase}>
+                <Copy size={13}/> Switch to QKP {scenario.config.qkp_enabled===false?'on':'off'}
+              </button>
+              <small>The two Optimal tabs use the same 24-hour inputs; only QKP storage changes. Run each before comparing measured service.</small>
+            </div>}
             {comparableBuiltins.map(e=>{
-              const record=e.id===activeId?result:e.result;
-              return <div key={e.id} className="builtin-comparison-row"><span>{e.name.replace(/^\d+ · /,'')}</span><strong>{record?.summary ? `${(100*Number(record.summary.total_satisfaction||0)).toFixed(1)}%` : 'Not run'}</strong></div>;
+              const sum=comparedSummary(e);
+              return <div key={e.id} className="builtin-comparison-row"><span>{isQkpStudy?(e.scenario.config.qkp_enabled===false?'QKP off':'QKP on'):e.name.replace(/^\d+ · /,'')} · whole horizon</span><strong>{sum ? `${(100*Number(sum.total_satisfaction||0)).toFixed(1)}%` : 'Not run'}</strong></div>;
             })}
-            {activeExperiment.builtin.family==='storm' && comparableBuiltins.map(e=>{
-              const record=e.id===activeId?result:e.result;
-              const sum=record?.summary;
-              return sum?<div key={`${e.id}-weather`} className="builtin-comparison-row">
-                <span>{e.name.includes('disabled')?'No QKP':'With QKP'} · storm window</span>
-                <strong>{sum.weather_window_satisfaction>=0?`${(100*sum.weather_window_satisfaction).toFixed(1)}%`:'—'} · {fmtKeys(sum.total_qkp_drawn_link_bits)} QKP draw</strong>
-              </div>:null;
+            {isQkpStudy && comparableBuiltins.map(e=>{
+              const sum=comparedSummary(e);
+              return <div key={`${e.id}-weather`} className="builtin-comparison-row">
+                <span>{e.scenario.config.qkp_enabled===false?'QKP off':'QKP on'} · severe weather</span>
+                <strong>{sum?.weather_window_satisfaction>=0?`${(100*sum.weather_window_satisfaction).toFixed(1)}%`:'Not run'}{sum?` · ${fmtKeys(sum.total_qkp_drawn_link_bits)} QKP draw`:''}</strong>
+              </div>;
             })}
-            <small>Only matching networks, demand/weather schedules, trajectories and time grids are compared. QKP draw counts link-key bits, not end-to-end delivered bits.</small>
+            {qkpDelta && <div className="builtin-comparison-row qkp-comparison-delta">
+              <span>QKP effect · full day / storm</span>
+              <strong>{qkpDelta.total.toFixed(1)} / {qkpDelta.storm.toFixed(1)} percentage points</strong>
+            </div>}
+            <small>Percentages are delivered/requested end-to-end SKR, not link capacity. Only completed, still-current runs are compared. QKP draw is link-key consumption, not end-to-end delivery. MILP results can be time-limited; check both gaps.</small>
           </details>}
         </div></details>
         <div className="side-divider"/>
@@ -716,7 +799,7 @@ export default function App() {
             {scenario.ground_stations.map(g=><EntityItem key={g.id} item={g} icon={SatelliteDish} subtitle={`${g.lat.toFixed(3)}° N  ${Math.abs(g.lon).toFixed(3)}° W`}
               selected={selectedId===g.id} onClick={()=>setSelectedId(g.id)} />)}
             {scenario.weather_regions.map(w=><EntityItem key={w.id} item={w} icon={Cloud} subtitle={`${w.effect || 'fog'} · ${w.radius_km} km · ${w.effect==='fog' ? `${w.visibility_km??0.5} km vis.` : `${w.precipitation_rate_mm_h??5} mm/h`}`} selected={selectedId===w.id} onClick={()=>setSelectedId(w.id)}/>)}
-            {scenario.demands.map(d=><EntityItem key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
+            {scenario.demands.map((d,i)=><EntityItem color={demandColor(i)} key={d.id} item={{name:`Demand ${d.id.slice(2,7)}`}} icon={Activity}
               subtitle={`${fmtRate(d.rate_bps)} mean · ${d.pattern||"constant"}`} selected={selectedId===d.id} onClick={()=>setSelectedId(d.id)} />)}
           </div>
           </div>
@@ -759,29 +842,40 @@ export default function App() {
           <div>
             <h1>Network <span className="h1-mark">{mode==='3d'?'· 3D':'· Map'}</span></h1>
           </div>
-          <div className="view-toggle"><button className={mode==='3d'?'active':''} onClick={()=>setMode('3d')}><Box size={16}/> 3D scene</button>
-            <button className={mode==='map'?'active':''} onClick={()=>setMode('map')}><Map size={16}/> Map view</button></div>
+          <div className="sq-stage-actions">
+            {story && <button type="button" className="sq-stage-guide" onClick={()=>setStoryOpen(true)}><CircleHelp size={15}/> Experiment story</button>}
+            <div className="view-toggle"><button className={mode==='3d'?'active':''} onClick={()=>setMode('3d')}><Box size={16}/> 3D scene</button>
+              <button className={mode==='map'?'active':''} onClick={()=>setMode('map')}><Map size={16}/> Map view</button></div>
+          </div>
         </div>
         <div className="scene-wrapper">
           <div className="scene-view">
             {mode==='3d' ? <Network3D key={sceneKey} scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId}
-              onSelect={setSelectedId} dragMode={dragMode} onPositionChange={onPositionChange} autoRotate={autoRotate} />
+              onSelect={setSelectedId} dragMode={dragMode} onPositionChange={onPositionChange} autoRotate={autoRotate} showLabels={showLabels} />
               : <GeoMap scenario={visualScenario} frame={currentFrame} topologyLinks={topologyLinks} selectedId={selectedId} onSelect={setSelectedId} onPositionChange={onPositionChange} />}
           </div>
           <div className="scene-corner top-right">
             <div className="toolbox">
-              {mode==='3d' && <><IconButton icon={MousePointer2} label={dragMode?'Turn off moving objects':'Move selected objects by dragging'}
+              {mode==='3d' && <><button type="button" className={`scene-label-toggle ${showLabels?'active':''}`}
+                onClick={()=>setShowLabels(v=>!v)} aria-pressed={showLabels}
+                aria-label={showLabels?'Hide 3D topology labels':'Show 3D topology labels'}
+                title={showLabels?'Hide node, QKP, weather, axis and link labels':'Show node, QKP, weather, axis and link labels'}>
+                {showLabels?<Eye size={16}/>:<EyeOff size={16}/>}<span>Labels {showLabels?'on':'off'}</span>
+              </button><span className="tool-divider"/><IconButton icon={MousePointer2} label={dragMode?'Turn off moving objects':'Move selected objects by dragging'}
                 active={dragMode} onClick={()=>setDragMode(v=>!v)} />
               <IconButton icon={Rotate3D} label="Auto-orbit camera" active={autoRotate} onClick={()=>setAutoRotate(v=>!v)} />
               <span className="tool-divider" />
               <IconButton icon={Crosshair} label="Reset 3D camera" onClick={()=>setSceneKey(v=>v+1)} /></>}
               {mode==='map'&&<IconButton icon={Crosshair} label="Switch to the resettable 3D scene" onClick={()=>setMode('3d')} />}
-              <IconButton icon={RefreshCcw} label="Reset scenario" onClick={reset} />
+              <IconButton icon={RefreshCcw} label="Restore original experiment settings" onClick={reset} />
             </div>
           </div>
-          {mode==='3d' && <div className="scene-corner bottom-left">
-            <div className="visual-legend"><span><i className="legend-mark optical-live"/> Optical generation</span><span><i className="legend-mark qkp-live"/> Stored-key flow</span><span><i className="legend-mark link"/> Idle optical link</span>{currentFrame && <span className="legend-live-count">{activeLinks} optical · {qkpOnlyLinks} QKP · {currentFrame.links.length-activeLinks-qkpOnlyLinks} idle</span>}</div>
-          </div>}
+          <div className="scene-corner bottom-left sq-demand-legend" aria-label="Demand path color and source legend">
+            <div className="sq-demand-legend-list">
+              {scenario.demands.map((d,i)=><button type="button" key={d.id} className={`sq-demand-tag ${selectedId===d.id?'is-selected':''}`} onClick={()=>setSelectedId(d.id)} title={`${d.source} → ${d.target}`}><i style={{background:demandColor(i)}}/>{d.name||d.id}</button>)}
+            </div>
+            <div className="sq-demand-key"><span><b className="sq-key-line"/> Optical ON</span><span><b className="sq-key-line dashed"/> QKP only</span><span><b className="sq-key-line mixed"/> Both</span><span>Brighter / thicker = higher link SKR or QKP draw</span></div>
+          </div>
           {running&&physicsProgress&&<div className="scene-corner bottom-right"><div className="pending-indicator">Physical model · {physicsProgress.total?`${physicsProgress.completed}/${physicsProgress.total}`:'preparing'} · {physicsProgress.cached||0} cached</div></div>}
           {dirty&&!running&&<div className="scene-corner bottom-right"><div className="pending-indicator"><span/> Changes pending · Play to recalculate</div></div>}
         </div>
@@ -789,46 +883,32 @@ export default function App() {
           <strong>Version mismatch:</strong> UI {STUDIO_VERSION} / API {apiVersion}. Replace the backend files too and restart FastAPI.
         </div>}
         {error && <div className="error-bar"><WifiOff size={15}/><span>{error}</span><button onClick={()=>setError('')}><X size={15}/></button></div>}
-        <div className="timeline">
+        <div className={`timeline ${timelineExpanded?'sq-timeline-expanded':'sq-timeline-compact'}`}>
           <div className="timeline-header"><div className="timeline-title"><span className="timeline-play-icon"><Activity size={17}/></span>
-            <div><strong>Simulation timeline</strong><small>{totalFrames} slots · {scenario.config.slot_seconds}s per slot{useEra5?' · ERA5 UTC':''}</small></div></div>
+            <div><strong>Playback</strong>{timelineExpanded&&<small>{totalFrames} slots · {scenario.config.slot_seconds}s per slot{useEra5?' · ERA5 UTC':''}</small>}</div></div>
             <div className="timeline-actions"><span className="time-current">{useEra5&&era5Date ? `${era5Date} ${toClock((currentFrame?.time_seconds ?? frameIndex*scenario.config.slot_seconds))} UTC` : `T+${toClock((currentFrame?.time_seconds ?? 0))}`}</span>
-              <button onClick={()=>{setFrameIndex(0);setPlaying(false);}} title="Restart playback"><RefreshCcw size={15}/></button>
+              {timelineExpanded&&<button onClick={()=>{setFrameIndex(0);setPlaying(false);}} title="Restart playback"><RefreshCcw size={15}/></button>}
+              <button className="sq-timeline-expand" type="button" title={timelineExpanded?"Minimize timeline":"Expand timeline and story"} aria-label={timelineExpanded?"Minimize timeline":"Expand timeline and story"} aria-expanded={timelineExpanded} onClick={()=>setTimelineExpanded(v=>!v)}><ChevronDown size={16}/></button>
               <button className="playback-button" onClick={togglePlayback} disabled={running} title={dirty || !result ? "Recalculate and play updated scenario" : playing ? "Pause" : "Play"}>{running?<RefreshCcw size={16} className="spin"/>:playing?<Pause size={16} fill="currentColor"/>:<Play size={16} fill="currentColor"/>}</button>
             </div></div>
-          <div className="trajectory-slot-control"><label htmlFor="slot-seconds">Time slot</label>
+          {timelineExpanded&&<div className="trajectory-slot-control"><label htmlFor="slot-seconds">Time slot</label>
             <select id="slot-seconds" value={scenario.config.slot_seconds} onChange={e=>patchScenario(s=>{s.config.slot_seconds=Number(e.target.value);s.config.slots=slotCount(s);})}>
               {[10,30,60,120,300,600,900,1800,3600].map(v=><option key={v} value={v}>{v<60?`${v} sec`:v<3600?`${v/60} min`:`${v/3600} hour`}</option>)}
-            </select><small>{horizonHours.toFixed(1)}h horizon{scenario.balloons.some(h=>h.trajectory_id)?" · trajectory":" · default"}</small></div>
+            </select><small>{horizonHours.toFixed(1)}h horizon{scenario.balloons.some(h=>h.trajectory_id)?" · trajectory":" · default"}</small></div>}
           <div className="timeline-scrub"><span>00:00</span><input aria-label="Simulation time slot" type="range" min={0} max={Math.max(0,totalFrames-1)}
-            value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);}}
+            value={frameIndex} onChange={e=>{setFrameIndex(Number(e.target.value));setPlaying(false);setSelectedMomentId(null);}}
             style={{'--progress': `${totalFrames>1 ? 100*frameIndex/(totalFrames-1) : 0}%`}} disabled={!result}/>
             <span>{toClock(totalFrames*scenario.config.slot_seconds)}</span></div>
-          {builtinPreset?.family==='storm' && scenario.config.horizon_seconds===18000 && <div className="showcase-update-note">
-            <span>This is a saved five-hour example from v1.2.5. The new preset uses the full 24-hour trajectory.</span>
-            <button type="button" onClick={()=>addBuiltinExperiment(builtinPreset.id)}>Open updated 24h preset</button>
-          </div>}
-          {moments.length>0 && <div className="showcase-moments" aria-label="Scenario key moments">
-            <div className="showcase-moments-list"><strong>Key moments</strong>
-              {moments.map((moment,i)=><button type="button" key={`${moment.seconds}-${i}`}
-                  className={frameIndex===moment.index?'is-current':''}
-                  title={`${moment.title}: ${moment.why}`}
-                  disabled={!result||dirty}
-                  onClick={()=>{setPlaying(false);setFrameIndex(moment.index);setExpandedMoment(null);}}>
-                <span>Slot {moment.index+1} · {toClock(moment.index*scenario.config.slot_seconds)}</span> {moment.title}
-              </button>)}
-            </div>
-            {currentMoment && <div className="showcase-moment-note">
-              <span><b>{currentMoment.title}:</b> {currentMoment.why}
-                {currentFrame && <small className="showcase-measured">Measured this slot: {requested>0 ? `${(100*served/requested).toFixed(1)}%` : '—'} demand served · {fmtKeys(currentFrame.qkp_drawn_link_bits||0)} QKP link-key draw</small>}
-              </span>
-              <button type="button" onClick={()=>setExpandedMoment(v=>v===currentMoment.seconds?null:currentMoment.seconds)}>
-                {expandedMoment===currentMoment.seconds?'Less':'Read more'}
-              </button>
-              {expandedMoment===currentMoment.seconds && <p>{currentMoment.details}</p>}
-            </div>}
-          </div>}
-          <div className="timeline-footer"><span className="timeline-note">Frame {frameIndex+1} / {totalFrames}{dirty?' · changes pending':''}</span></div>
+          {timelineExpanded&&story && <StoryRail presetId={storyPresetId} moments={moments} activeId={storyMomentId}
+            onJump={jumpToStoryMoment} onOpen={()=>setStoryOpen(true)}
+            hasResults={!!result&&!dirty} horizonSeconds={simulationHorizonSeconds(scenario)} changed={storyChanged}/>}
+          {storyOpen && story && <StoryDialog presetId={storyPresetId} moments={moments}
+            scenario={scenario} result={!dirty?result:null} changed={storyChanged}
+            comparisons={comparableBuiltins.map(e=>({id:e.id,name:e.name,
+              summary:comparedSummary(e)||null}))}
+            onClose={()=>setStoryOpen(false)} onHistoricalWeather={()=>{setStoryOpen(false);createHistoricalVariant();}}
+            onJump={moment=>{jumpToStoryMoment(moment);setStoryOpen(false);}}/>}
+          {timelineExpanded&&<div className="timeline-footer"><span className="timeline-note">Frame {frameIndex+1} / {totalFrames}{dirty?' · changes pending':''}</span></div>}
         </div>
       </div>
     </main>
@@ -888,6 +968,15 @@ export default function App() {
               <div className="selection-stat"><span>Weather (fog/rain/snow)</span><b>{(selected.weather_flags||[0,0,0]).join(' / ')}</b></div>
               <div className="selection-stat"><span>Capacity</span><b>{!dirty?fmtRate(selected.capacity_bps):'Run to update'}</b></div>
               <div className="selection-stat"><span>Used by demands</span><b>{!dirty?fmtRate(selected.used_bps):'Run to update'}</b></div>
+              {!dirty&&currentFrame&&<div className="sq-link-breakdown">
+                <strong>Carried demands</strong>
+                {allocationsForLink(selected,currentFrame,scenario).map(d=><div key={d.id} className="sq-link-demand"><i style={{background:d.color}}/>{d.name}<b>{fmtRate(d.rate)}</b></div>)}
+                {!allocationsForLink(selected,currentFrame,scenario).length&&<small>No served demand uses this link in this slot.</small>}
+                <div className="sq-link-flow-kind">{linkKeyMode(selected)==='qkp'?'Dashed: stored keys':linkKeyMode(selected)==='mixed'?'Solid + dashed: fresh and stored link keys':linkKeyMode(selected)==='fresh'?'Solid: fresh link keys':'No carried key flow'}
+                  <small>Fresh {fmtRate(selected.fresh_used_bps||0)} · QKP {fmtRate(selected.qkp_used_bps||0)}</small>
+                  {selected.capacity_bps>1e-8&&<small>Fresh capacity used: {(100*Math.min(1,(selected.fresh_used_bps||0)/selected.capacity_bps)).toFixed(0)}%{(selected.fresh_used_bps||0)>=.9*selected.capacity_bps?' · Possible physical bottleneck':''}</small>}
+                </div>
+              </div>}
               <div className="selection-stat"><span>Slant distance</span><b>{selected.distance_km.toFixed(1)} km</b></div>
               <div className="selection-stat"><span>GS elevation</span><b>{Number.isFinite(selected.elevation_deg) ? `${selected.elevation_deg.toFixed(1)}°` : 'Run to update'}</b></div>
               <div className="selection-stat"><span>Weather attenuation</span><b>{Number.isFinite(selected.weather_loss_db) ? `${selected.weather_loss_db.toFixed(1)} dB` : 'Run to update'}</b></div>

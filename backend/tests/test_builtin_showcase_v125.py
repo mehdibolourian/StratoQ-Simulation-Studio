@@ -24,26 +24,30 @@ def scenario(name):
 
 
 def test_valid_presets_same_algorithm_comparison_and_qkp_pair():
-    assert len(PRESETS) == 5
-    a, b, c = (scenario(x) for x in ('corridor-scar', 'corridor-mcr', 'corridor-opt'))
-    assert len(a.ground_stations) == 4
-    assert len(a.balloons) == 3
-    assert len(a.demands) == 6
-    for other in (b, c):
+    assert len(PRESETS) == 4
+    a,b,on,off = (scenario(x) for x in ('corridor-scar','corridor-mcr','qkp-enabled','qkp-disabled'))
+    # Everything physical is identical. The two online experiments differ
+    # from the QKP-on Optimal experiment only in allocation_mode.
+    assert all(s.config.horizon_seconds==86400 and s.config.slots==144 for s in (a,b,on,off))
+    assert all(s.config.slot_seconds==600 for s in (a,b,on,off))
+    for other in (b,on,off):
         assert a.ground_stations == other.ground_stations
         assert a.balloons == other.balloons
         assert a.demands == other.demands
         assert a.weather_regions == other.weather_regions
-        assert a.config.slot_seconds == other.config.slot_seconds
-        assert a.config.horizon_seconds == other.config.horizon_seconds
+        assert a.link_overrides == other.link_overrides
         assert a.config.optical == other.config.optical
-    assert [x.config.allocation_mode for x in (a,b,c)] == ['scar_q','mcr_q','optimal']
-    assert all(len(demand_rates(a,24,900))==6 for _ in [0])
-    assert len({frozenset((d.source,d.target)) for d in a.demands}) == 6
-    on,off = scenario('qkp-enabled'),scenario('qkp-disabled')
+    assert [x.config.allocation_mode for x in (a,b,on,off)] == ['scar_q','mcr_q','optimal','optimal']
+    assert a.config.qkp_enabled and b.config.qkp_enabled and on.config.qkp_enabled
+    assert off.config.qkp_enabled is False
     assert on.model_dump(exclude={'config':{'qkp_enabled'}}) == off.model_dump(exclude={'config':{'qkp_enabled'}})
-    assert on.config.qkp_enabled is True and off.config.qkp_enabled is False
-    assert on.config.slots == 144 and on.config.horizon_seconds == 86400
+    assert len(on.ground_stations)==3 and len(on.balloons)==1 and len(on.demands)==2
+    assert all(s.balloons[0].trajectory_id=='builtin:csv-ontario-24h' for s in (a,b,on,off))
+    assert on.balloons[0].n_tx==on.balloons[0].n_rx==2
+    assert on.balloons[0].capacity_bits/3 >= 150_000_000
+    profile=demand_rates(on,144,600)
+    shared_requested=sum(sum(values[42:102])*600 for values in profile.values())
+    assert shared_requested < on.balloons[0].capacity_bits/3
 
 
 def test_builtin_traces_survive_registry_reset_and_can_be_translated():
@@ -63,12 +67,12 @@ def test_builtin_traces_survive_registry_reset_and_can_be_translated():
     unshifted,_=scenario_at(s,0)
     assert unshifted.balloons[0].lat==pytest.approx(raw0['lat'])
     assert unshifted.balloons[0].lon==pytest.approx(raw0['lon'])
-    assert horizon_seconds(s)==21600
+    assert horizon_seconds(s)==86400
 
 
 def test_timed_weather_modifies_real_path_attenuation_and_visual_snapshots():
     s=scenario('qkp-enabled')
-    snaps = [scenario_at(s,t)[0] for t in [0,36900,41400,55800]]
+    snaps = [scenario_at(s,t)[0] for t in [0,27000,41400,72000]]
     assert len(snaps[0].weather_regions)==0
     assert len(snaps[1].weather_regions)==1
     assert len(snaps[2].weather_regions)==2
@@ -79,10 +83,10 @@ def test_timed_weather_modifies_real_path_attenuation_and_visual_snapshots():
     assert sum(row['weather_loss_db'] for row in late)==0
     # Fog attenuates the actual uplink route; no impact if region absent.
     fog=s.weather_regions[0]
-    at_ramp=weather_at(fog, 36300)
-    at_peak=weather_at(fog, 37800)
+    at_ramp=weather_at(fog, 25500)
+    at_peak=weather_at(fog, 27600)
     assert at_ramp.visibility_km > at_peak.visibility_km
-    assert fog.visibility_km==.13  # Input is never overwritten.
+    assert fog.visibility_km==.06  # Input is never overwritten.
 
 
 def test_time_horizon_limit_also_without_trajectory():
@@ -95,11 +99,12 @@ def test_builtin_endpoints_return_stable_validated_presets():
     client=TestClient(app)
     response=client.get('/api/experiments/builtin')
     assert response.status_code==200
-    assert len(response.json()['experiments'])==5
+    assert len(response.json()['experiments'])==4
     assert all('scenario' not in p for p in response.json()['experiments'])
     selected=client.get('/api/experiments/builtin/qkp-enabled')
     assert selected.status_code==200
     assert Scenario.model_validate(selected.json()['scenario']).config.qkp_enabled
+    assert client.get('/api/experiments/builtin/qkp-disabled').status_code==200
     assert client.get('/api/experiments/builtin/unknown').status_code==404
 
 
@@ -146,9 +151,11 @@ def test_timed_milestone_events_are_inside_grid_and_identical_for_matched_runs()
         assert all(0<=e['seconds']<s.config.horizon_seconds for e in events)
         assert all(e['title'] and e['why'] and e['details'] for e in events)
         assert all(0<=min(s.config.slots-1, __import__('math').ceil(e['seconds']/s.config.slot_seconds))<s.config.slots for e in events)
+    assert all(p['milestones']==PRESETS[0]['milestones'] for p in PRESETS)
     qkp=[p['milestones'] for p in PRESETS if p['id']=='qkp-enabled'][0]
-    off=[p['milestones'] for p in PRESETS if p['id']=='qkp-disabled'][0]
-    assert qkp==off
+    assert [m['seconds'] for m in qkp]==[0,25200,37800,61200]
+    on=scenario('qkp-enabled')
+    assert on.weather_regions[0].active_until_seconds-on.weather_regions[0].active_from_seconds==36000
 
 
 def test_frontend_backend_presets_in_sync():

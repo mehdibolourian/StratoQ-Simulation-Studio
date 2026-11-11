@@ -1,0 +1,95 @@
+{
+  "id": "464fe27080fe4d4a813773780c80b3d8",
+  "status": "complete",
+  "stage": "complete",
+  "episode": 48,
+  "episodes": 48,
+  "checkpoints": [
+    {
+      "episode": 0,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 6,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 12,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 18,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 24,
+      "evaluation_reward": 0.6424912328891594,
+      "evaluation_satisfaction": 0.6618735538674546,
+      "evaluation_served_bits": 32881878.156135146
+    },
+    {
+      "episode": 30,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 36,
+      "evaluation_reward": 0.3333333333333332,
+      "evaluation_satisfaction": 0.3188405797101448,
+      "evaluation_served_bits": 15839999.999999994
+    },
+    {
+      "episode": 42,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    },
+    {
+      "episode": 48,
+      "evaluation_reward": 0.6616772195981145,
+      "evaluation_satisfaction": 0.6170885558504875,
+      "evaluation_served_bits": 30656959.45465222
+    }
+  ],
+  "error": null,
+  "started_at": 1794356688.965554,
+  "physical_progress": {
+    "stage": "complete",
+    "total": 12,
+    "completed": 12,
+    "cached": 12,
+    "computed": 0,
+    "workers": 0
+  },
+  "reward_shape": {
+    "reward_success_threshold": 0.95,
+    "reward_success": 1.0,
+    "reward_at_or_above_hi": 0.6,
+    "reward_above_hi_slope": 0.4,
+    "reward_between_base": 0.1,
+    "reward_between_gain": 0.1,
+    "reward_below_slope": 1.0,
+    "reward_zero_service_guard": false
+  },
+  "updated_at": 1794356692.702202,
+  "shape": {
+    "n_gs": 3,
+    "n_haps": 2,
+    "n_demands": 3,
+    "n_links": 12,
+    "observation_dim": 102,
+    "logits_dim": 8,
+    "hidden_dim": 64
+  },
+  "curriculum_active_demands": 3,
+  "finished_at": 1794356692.702202
+}

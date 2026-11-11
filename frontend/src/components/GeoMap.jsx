@@ -3,6 +3,7 @@ import { Map as MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'map
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { geoCircle } from '../lib/geo';
 import { resolveVisualLinks } from '../lib/topology.js';
+import {allocationsForLink,linkDisplayState,linkRateIntensity,linkFallbackColor,linkTooltip} from '../lib/linkVisuals.js';
 
 setWorkerUrl(workerUrl);
 const emptyFC = () => ({ type: 'FeatureCollection', features: [] });
@@ -38,7 +39,27 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
       map.addLayer({id: 'weather-fills', type: 'fill', source: 'weather', paint: {'fill-color': ['get', 'color'], 'fill-opacity': 0.18}});
       map.addLayer({id: 'weather-edges', type: 'line', source: 'weather', paint: {'line-color': ['get', 'color'], 'line-width': 1.8}});
       map.addSource('links', {type: 'geojson', data: emptyFC()});
-      map.addLayer({id: 'link-lines', type: 'line', source: 'links', paint: {'line-color': ['get', 'color'], 'line-width': ['case', ['get','selected'], 5, ['get','activated'], 4.2, ['get','allocated'], 3.2, 1.8], 'line-opacity': 0.85}});
+      // Optical generation is a solid demand-colored path. Stored-key-only
+      // traffic is broken/dashed and has an amber outline; mixed traffic has
+      // a thin parallel amber dash. No white overlay obscures demand hues.
+      map.addLayer({id:'link-lines',type:'line',source:'links',
+        filter:['!=',['get','mode'],'qkp'],
+        paint:{'line-color':['get','color'],'line-width':['get','width'],
+          'line-opacity':['get','opacity'],'line-offset':['get','offset']}});
+      map.addLayer({id:'link-qkp-backing',type:'line',source:'links',
+        filter:['==',['get','mode'],'qkp'],
+        paint:{'line-color':'#d19b5c','line-width':['+',['get','width'],2],
+          'line-opacity':.58,'line-offset':['get','offset'],'line-dasharray':[1.7,1.3]}});
+      map.addLayer({id:'link-qkp-only',type:'line',source:'links',
+        filter:['==',['get','mode'],'qkp'],
+        paint:{'line-color':['get','color'],'line-width':['get','width'],
+          'line-opacity':['get','opacity'],'line-offset':['get','offset'],
+          'line-dasharray':[1.7,1.3]}});
+      map.addLayer({id:'link-mixed-qkp',type:'line',source:'links',
+        filter:['==',['get','mode'],'mixed'],
+        paint:{'line-color':'#ffbe78','line-width':2.4,'line-opacity':.95,
+          'line-offset':['+',['get','offset'],3],
+          'line-dasharray':[1.15,1.7]}});
       // MapLibre weather polygon is draggable (not only its small marker).
       // Keep drag state outside React so layer updates cannot interrupt it.
       let weatherDrag = null;
@@ -78,6 +99,11 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
             map.on('click', 'link-lines', e => { const id = e.features?.[0]?.properties?.id; if(id) handlers.current.onSelect(id); });
       map.on('mouseenter','link-lines',()=>{map.getCanvas().style.cursor='pointer';});
       map.on('mouseleave','link-lines',()=>{map.getCanvas().style.cursor='';});
+      for (const layer of ['link-qkp-only','link-mixed-qkp','link-qkp-backing']) {
+        map.on('click',layer,e=>{const id=e.features?.[0]?.properties?.id;if(id)handlers.current.onSelect(id);});
+        map.on('mouseenter',layer,()=>{map.getCanvas().style.cursor='pointer';});
+        map.on('mouseleave',layer,()=>{map.getCanvas().style.cursor='';});
+      }
     });
     return () => {markers.current.forEach(m => m.remove()); markers.current = []; map.remove(); mapRef.current = null;};
   }, []);
@@ -88,12 +114,25 @@ export default function GeoMap({ scenario, frame, topologyLinks, selectedId, onS
     function updateLayers() {
       const gsById = Object.fromEntries(scenario.ground_stations.map(x => [x.id, x]));
       const hapById = Object.fromEntries(scenario.balloons.map(x => [x.id, x]));
-      const links = resolveVisualLinks(topologyLinks, frame).map(l => {
-        const gs = gsById[l.source], hap = hapById[l.target];
-        if (!gs || !hap) return null;
-        return {type: 'Feature', geometry: {type: 'LineString', coordinates: [[gs.lon, gs.lat], [hap.lon, hap.lat]]},
-          properties: {id:l.id, selected:l.id===selectedId, activated:!!l.activated, allocated:!!l.allocated, color: l.id===selectedId ? '#f8cf91' : (!l.enabled || !l.in_range) ? '#e18485' : l.activated ? '#f5b934' : l.allocated ? '#dbaa69' : '#516679'}};
-      }).filter(Boolean);
+      const links=resolveVisualLinks(topologyLinks,frame).flatMap(l=>{
+        const gs=gsById[l.source],hap=hapById[l.target];
+        if(!gs||!hap)return [];
+        const mode=linkDisplayState(l);
+        const intensity=linkRateIntensity(l,frame);
+        const colorDefault=linkFallbackColor(l);
+        const entries=allocationsForLink(l,frame,scenario);
+        const features=entries.length?entries.map((d,i)=>({
+          color:d.color,width:l.id===selectedId?7:3.1+2.9*intensity,
+          opacity:.65+.35*intensity, mode,
+          offset:(i-(entries.length-1)/2)*6,
+          title:linkTooltip(l,frame,scenario),
+        })):[{color:colorDefault,width:l.id===selectedId?5:mode==='idle'?1.4:2.5+2.2*intensity,
+          opacity:(!l.enabled||!l.in_range) ? 0.4 : mode==='idle' ? 0.38 : 0.57+0.4*intensity,
+          mode,offset:0,title:linkTooltip(l,frame,scenario)}];
+        return features.map(f=>({type:'Feature',
+          geometry:{type:'LineString',coordinates:[[gs.lon,gs.lat],[hap.lon,hap.lat]]},
+          properties:{id:l.id,selected:l.id===selectedId,...f}}));
+      });
       map.getSource('links')?.setData({type:'FeatureCollection', features: links});
       map.getSource('coverage')?.setData({type:'FeatureCollection', features: scenario.balloons.map(coverageFeature)});
       map.getSource('weather')?.setData({type:'FeatureCollection', features: scenario.weather_regions.map(w =>

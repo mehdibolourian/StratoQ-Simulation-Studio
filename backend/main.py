@@ -11,6 +11,7 @@ from stratoq_demo import jobs, open_meteo_jobs as era5_jobs
 from stratoq_demo.era5_weather import register_bytes, get_cube, roi_from_scenario
 from stratoq_demo import learning_jobs
 from stratoq_demo.learning_presets import PRESET, preset_metadata, validate_learning_scenario, validate_time_grid
+from stratoq_demo.learning_core import validate_reward_shape
 from pydantic import BaseModel
 import sysconfig
 import importlib.util
@@ -179,23 +180,32 @@ class LearningStart(BaseModel):
     scenario: dict | None = None  # Complete fixed network: immutable snapshot per job.
     slots: int = 24
     slot_seconds: int = 300
-    episodes: int = 30
-    checkpoint_every: int = 5
+    episodes: int = 48
+    checkpoint_every: int = 6
     seed: int = 42
-    learning_rate: float = 1e-4
+    learning_rate: float = 2e-4
     gamma: float = .99
     gae_lambda: float = .95
     clip: float = .2
-    ppo_epochs: int = 5
-    batch_size: int = 64
-    entropy_start: float = .01
-    entropy_end: float = .001
+    ppo_epochs: int = 8
+    batch_size: int = 16
+    entropy_start: float = .008
+    entropy_end: float = .0003
     compare_baselines: bool = False
     curriculum_enabled: bool = True
     curriculum_first_demands: int = 1
     curriculum_second_demands: int = 2
-    curriculum_first_end_pct: int = 33
-    curriculum_second_end_pct: int = 67
+    curriculum_first_end_pct: int = 12
+    curriculum_second_end_pct: int = 30
+    # Paper equation defaults, separately tunable for *new* PPO jobs.
+    reward_success_threshold: float = .95
+    reward_success: float = 1.
+    reward_at_or_above_hi: float = .6
+    reward_above_hi_slope: float = .4
+    reward_between_base: float = .1
+    reward_between_gain: float = .1
+    reward_below_slope: float = 1.
+    reward_zero_service_guard: bool = False
 
 
 @app.get('/api/learning/preset')
@@ -235,6 +245,10 @@ def create_learning_run(request: LearningStart):
         raise HTTPException(400,'Invalid PPO update epochs or batch size')
     if not 0 <= request.entropy_end <= request.entropy_start <= 1:
         raise HTTPException(400,'Entropy coefficients must satisfy 0 <= end <= start <= 1')
+    try:
+        validate_reward_shape(request.model_dump())
+    except ValueError as exc:
+        raise HTTPException(400,str(exc)) from exc
     # Hidden curriculum controls must not block disabled-curriculum runs.
     if request.curriculum_enabled:
         if not 1 <= request.curriculum_first_demands <= 20 or not 1 <= request.curriculum_second_demands <= 20:

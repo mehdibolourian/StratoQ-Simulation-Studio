@@ -6,6 +6,20 @@ import { potentialLinks } from '../lib/topology.js';
 import { CENTER } from '../lib/geo.js';
 
 const DRAFT_KEY='stratoq.learning.network.v122';
+// Exact defaults from the published piecewise reward expression.
+const PAPER_REWARD={reward_success_threshold:.95,reward_success:1,
+  reward_at_or_above_hi:.6,reward_above_hi_slope:.4,
+  reward_between_base:.1,reward_between_gain:.1,reward_below_slope:1,
+  reward_zero_service_guard:false};
+// Compact illustrative preview; backend evaluates the same branch ordering.
+function rewardPreview(rho, p, hi=.7, lo=.5) {
+  if(p.reward_zero_service_guard && rho===0 && hi===0)return 0;
+  if(rho>=p.reward_success_threshold)return p.reward_success;
+  if(rho>=hi)return p.reward_at_or_above_hi+p.reward_above_hi_slope*(rho-hi);
+  if(rho>=lo)return p.reward_between_base+p.reward_between_gain*(rho-lo)/(hi-lo+1e-8);
+  return -p.reward_below_slope*(lo-rho);
+}
+
 const percentage = value => Number.isFinite(value) ? `${(value*100).toFixed(1)}%` : '—';
 const bits = value => !Number.isFinite(value) ? '—' : value>=1e6 ? `${(value/1e6).toFixed(2)} Mbit` : `${(value/1e3).toFixed(1)} kbit`;
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -85,6 +99,9 @@ function PolicyArchitecture({shape,stats,episodes,slotCount}) {
       <Summary label="Value loss" value={Number.isFinite(stats?.value_loss)?stats.value_loss.toFixed(4):'—'} detail="Critic prediction error"/>
       <Summary label="Policy entropy" value={Number.isFinite(stats?.entropy)?stats.entropy.toFixed(4):'—'} detail="Mean action uncertainty"/>
       <Summary label="Entropy coefficient" value={Number.isFinite(stats?.entropy_coef)?stats.entropy_coef.toExponential(2):'—'} detail="Exploration regularization"/>
+      <Summary label="Approx. PPO KL" value={Number.isFinite(stats?.approx_kl)?stats.approx_kl.toFixed(5):'—'} detail="Mean update divergence (not policy quality)"/>
+      <Summary label="Clipped updates" value={Number.isFinite(stats?.clip_fraction)?percentage(stats.clip_fraction):'—'} detail="Fraction exceeding PPO clip range"/>
+      <Summary label="Policy weight change" value={Number.isFinite(stats?.relative_weight_change)?percentage(stats.relative_weight_change):'—'} detail="Relative L2 parameter change this episode"/>
     </div>
     <p className="ll-caption">These are actual PPO update diagnostics, not throughput measurements. Training loss alone does not establish better network decisions; use frozen-checkpoint keys served for that comparison.</p>
   </section>;
@@ -108,17 +125,30 @@ function PerformanceChart({metrics,checkpoints,selectedEpisode,view,live,totalEp
   const isSat=view==='satisfaction';
   const train=metrics.filter(m=>Number.isFinite(isSat?m.train_satisfaction:m.train_reward))
     .map(m=>({x:m.episode,y:isSat?m.train_satisfaction:m.train_reward}));
-  const evalPoints=checkpoints.filter(c=>Number.isFinite(isSat?c.evaluation_satisfaction:c.evaluation_reward))
-    .map(c=>({x:c.episode,y:isSat?c.evaluation_satisfaction:c.evaluation_reward}));
+  // Frozen evaluations use keys-served satisfaction rather than the
+  // heuristic-relative training reward. Never overlay these as if comparable.
+  const evalPoints=isSat?checkpoints.filter(c=>Number.isFinite(c.evaluation_satisfaction))
+    .map(c=>({x:c.episode,y:c.evaluation_satisfaction})):[];
+  // A 25-episode trailing average exposes the long-run trend behind noisy PPO rollouts.
+  const smoothed=[];
+  if(!isSat && train.length>=5) {
+    const window=25;
+    let sum=0;
+    for(let i=0;i<train.length;i++) {
+      sum+=train[i].y;
+      if(i>=window)sum-=train[i-window].y;
+      smoothed.push({x:train[i].x,y:sum/Math.min(i+1,window)});
+    }
+  }
   const isLive=live && !live.episode_complete && live.slots_done>0 &&
     (live.stage==='training'||live.stage==='initial-evaluation'||live.stage==='checkpoint-evaluation');
-  const partial=isLive ? {
+  const partial=isLive && (isSat || live.stage==='training') ? {
     x:live.stage==='training' ? Math.max(0,live.episode-1)+live.slots_done/Math.max(1,live.slots_total) : live.episode,
     y:isSat?live.partial_satisfaction:live.partial_reward,
     series:live.stage==='training'?'training':'evaluation',
   }:null;
   const series=[{name:isSat?'Training · keys served':'Training · heuristic-relative reward',values:compactPlotSeries(train),color:'#78cfc1'},
-                {name:isSat?'Frozen evaluation · keys served':'Evaluation · satisfaction reward',values:compactPlotSeries(evalPoints),color:'#e6bc76'}];
+                {name:isSat?'Frozen evaluation · keys served':'Reward · trailing 25-episode average',values:compactPlotSeries(isSat?evalPoints:smoothed),color:'#e6bc76'}];
   const validPartial=partial&&Number.isFinite(partial.y)?partial:null;
   const points=[...series[0].values,...series[1].values,...(validPartial?[validPartial]:[])];
   if(!points.length) return <div className="ll-chart-empty">Waiting for first measured optical/LP result. Live slot progress appears above during setup and evaluation.</div>;
@@ -146,7 +176,7 @@ function PerformanceChart({metrics,checkpoints,selectedEpisode,view,live,totalEp
       {selectedEpisode!==null&&selectedEpisode<=end&&<line x1={X(selectedEpisode)} x2={X(selectedEpisode)} y1="34" y2="235" stroke="#f0d2aa" strokeWidth="1" strokeDasharray="5 5"/>}
       <text x="58" y="263" fill="#9bb1c3" fontSize="12">Episode 0</text><text x="788" y="263" fill="#9bb1c3" fontSize="12" textAnchor="end">Episode {end}{!finished?' · live scale':''}</text>
     </svg>
-    <div className="ll-legend">{series.map(s=><span key={s.name}><i style={{background:s.color}} />{s.name}</span>)}{validPartial&&<span>● Live slot-level measurement</span>}</div>
+    <div className="ll-legend">{series.filter(s=>s.values.length).map(s=><span key={s.name}><i style={{background:s.color}} />{s.name}</span>)}{validPartial&&<span>● Live slot-level measurement</span>}</div>
   </div>;
 }
 function NumberSetting({title,value,onChange,min,max,step='any',disabled=false,hint}) {
@@ -167,12 +197,13 @@ export default function LearningLab({studioScenario}) {
   const validTimeGrid=Number.isInteger(computedSlots)&&computedSlots>=1&&computedSlots<=288&&
     Number.isInteger(slotSeconds)&&slotSeconds>=1&&slotSeconds<=3600&&
     Number.isInteger(horizonMinutes)&&horizonMinutes>=1&&horizonMinutes<=1440;
-  const [episodes,setEpisodes]=useState(30);
-  const [interval,setInterval]=useState(5);
+  const [episodes,setEpisodes]=useState(48);
+  const [interval,setInterval]=useState(6);
   const [checkpointPage,setCheckpointPage]=useState(null);
   const [seed,setSeed]=useState(42);
-  const [params,setParams]=useState({learning_rate:.0001,gamma:.99,gae_lambda:.95,clip:.2,ppo_epochs:5,batch_size:64,entropy_start:.01,entropy_end:.001,
-    compare_baselines:false,curriculum_enabled:true,curriculum_first_demands:1,curriculum_second_demands:2,curriculum_first_end_pct:33,curriculum_second_end_pct:67});
+  const [params,setParams]=useState({learning_rate:.0002,gamma:.99,gae_lambda:.95,clip:.2,ppo_epochs:8,batch_size:16,entropy_start:.008,entropy_end:.0003,
+    compare_baselines:false,curriculum_enabled:true,curriculum_first_demands:1,curriculum_second_demands:2,curriculum_first_end_pct:12,curriculum_second_end_pct:30});
+  const [rewardParams,setRewardParams]=useState(()=>({...PAPER_REWARD}));
   const [job,setJob]=useState(null);
   const [metrics,setMetrics]=useState([]);
   const [live,setLive]=useState({});
@@ -276,6 +307,7 @@ export default function LearningLab({studioScenario}) {
   const selectedData=draft && ['ground_stations','balloons','demands','weather_regions'].map(g=>({group:g,item:draft[g].find(x=>x.id===selectedNode)})).find(x=>x.item);
   const item=selectedData?.item;
   const setParam=(key,v)=>setParams(old=>({...old,[key]:v}));
+  const setRewardParam=(key,v)=>setRewardParams(old=>({...old,[key]:v}));
   const updateLink=(id,enabled)=>edit(sc=>{const [source,target]=id.split(':');const old=(sc.link_overrides||[]).find(x=>x.source===source&&x.target===target);sc.link_overrides=(sc.link_overrides||[]).filter(x=>!(x.source===source&&x.target===target));sc.link_overrides.push({...old,source,target,enabled});});
   async function start(){
     setError('');setWorking(true);
@@ -284,9 +316,15 @@ export default function LearningLab({studioScenario}) {
       if(draft.ground_stations.length<2||!draft.balloons.length||!draft.demands.length)throw new Error('Learning needs at least two GSs, one HAP and one demand.');
       if(!Number.isSafeInteger(episodes)||episodes<1||!Number.isSafeInteger(interval)||interval<1)throw new Error('Episodes and checkpoint interval must be positive, safe integers.');
       if(!validTimeGrid)throw new Error('Time horizon must be a whole number of slots (1–288), lasting at most 24 hours. Adjust slot length or horizon.');
+      for(const [key,value] of Object.entries(rewardParams)) {
+        if(key==='reward_zero_service_guard')continue;
+        const upper=key==='reward_success_threshold'?1:['reward_below_slope','reward_above_hi_slope'].includes(key)?5:2;
+        if(!Number.isFinite(value)||value<0||value>upper)
+          throw new Error(`Reward constant ${key} must be between 0 and ${upper}.`);
+      }
       const {curriculum_enabled,compare_baselines,...otherParams}=params;
       const curriculumParams=curriculum_enabled?otherParams:Object.fromEntries(Object.entries(otherParams).filter(([key])=>!key.startsWith('curriculum_')));
-      const run=await request('/api/learning/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'ontario-compact-v1',scenario:draft,slots:computedSlots,slot_seconds:slotSeconds,episodes,checkpoint_every:interval,seed,curriculum_enabled,compare_baselines,...curriculumParams})});
+      const run=await request('/api/learning/runs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({preset:'ontario-compact-v1',scenario:draft,slots:computedSlots,slot_seconds:slotSeconds,episodes,checkpoint_every:interval,seed,curriculum_enabled,compare_baselines,...curriculumParams,...rewardParams})});
       setJob(run);metricCursorRef.current=0;setMetrics([]);setLive({});setEvaluation(null);setSelected(null);setCheckpointPage(null);setSlot(0);
     }catch(e){setError(e.message);}finally{setWorking(false);}
   }
@@ -331,13 +369,24 @@ export default function LearningLab({studioScenario}) {
           <div className="ll-pair"><NumberSetting title="GAE λ" disabled={editLock} min={0} max={1} step={.01} value={params.gae_lambda} onChange={v=>setParam('gae_lambda',v)}/><NumberSetting title="PPO clip ε" disabled={editLock} min={.01} max={.5} step={.01} value={params.clip} onChange={v=>setParam('clip',v)}/></div>
           <div className="ll-pair"><NumberSetting title="Update epochs" disabled={editLock} min={1} max={30} step={1} value={params.ppo_epochs} onChange={v=>setParam('ppo_epochs',v)}/><NumberSetting title="Mini-batch size" disabled={editLock} min={1} max={1024} step={1} value={params.batch_size} onChange={v=>setParam('batch_size',v)}/></div>
           <div className="ll-pair"><NumberSetting title="Entropy start" disabled={editLock} min={0} max={1} value={params.entropy_start} onChange={v=>setParam('entropy_start',v)}/><NumberSetting title="Entropy end" disabled={editLock} min={0} max={1} value={params.entropy_end} onChange={v=>setParam('entropy_end',v)}/></div>
-          <p className="ll-caption">Entropy coefficient decreases linearly from start to end. Checkpoints are evaluated with all demands and no exploration. Only the fixed evaluation curve compares identical workloads when curriculum is active.</p>
+          <p className="ll-caption">Entropy coefficient decreases linearly from start to end. The demo defaults favor more updates and less late-stage exploration. Checkpoints are evaluated with all demands and no exploration. Only the fixed evaluation curve compares identical workloads when curriculum is active.</p>
+        </details>
+        <details className="ll-section"><summary><SlidersHorizontal size={14}/> Reward function · advanced <ChevronDown size={13}/></summary>
+          <p className="ll-caption">Edit the constants in the paper's four-branch heuristic-relative reward. Each new run saves these exact values; existing runs/checkpoints are unaffected. The numerical stability ε = 10⁻⁸ is fixed.</p>
+          <div className="ll-pair"><NumberSetting title="Success threshold ρ ≥" disabled={editLock} min={0} max={1} step={.01} value={rewardParams.reward_success_threshold} onChange={v=>setRewardParam('reward_success_threshold',v)}/><NumberSetting title="Success reward · 1" disabled={editLock} min={0} max={2} step={.05} value={rewardParams.reward_success} onChange={v=>setRewardParam('reward_success',v)}/></div>
+          <div className="ll-pair"><NumberSetting title="Match-best bonus · 0.6" disabled={editLock} min={0} max={2} step={.05} value={rewardParams.reward_at_or_above_hi} onChange={v=>setRewardParam('reward_at_or_above_hi',v)}/><NumberSetting title="Above-best slope · 0.4" disabled={editLock} min={0} max={5} step={.05} value={rewardParams.reward_above_hi_slope} onChange={v=>setRewardParam('reward_above_hi_slope',v)}/></div>
+          <div className="ll-pair"><NumberSetting title="Between-baselines base · 0.1" disabled={editLock} min={0} max={2} step={.05} value={rewardParams.reward_between_base} onChange={v=>setRewardParam('reward_between_base',v)}/><NumberSetting title="Between-baselines gain · 0.1" disabled={editLock} min={0} max={2} step={.05} value={rewardParams.reward_between_gain} onChange={v=>setRewardParam('reward_between_gain',v)}/></div>
+          <NumberSetting title="Below-worst penalty factor · 1" disabled={editLock} min={0} max={5} step={.1} value={rewardParams.reward_below_slope} onChange={v=>setRewardParam('reward_below_slope',v)}/>
+          <label className="ll-checkbox"><input type="checkbox" disabled={editLock} checked={rewardParams.reward_zero_service_guard} onChange={e=>setRewardParam('reward_zero_service_guard',e.target.checked)}/> Do not reward zero service when both heuristics also serve zero (experimental safeguard)</label>
+          <p className="ll-caption">Preview with best heuristic 70% and weaker heuristic 50%: agent satisfaction 69% → {rewardPreview(.69,rewardParams).toFixed(3)} · 70% → {rewardPreview(.7,rewardParams).toFixed(3)} · 80% → {rewardPreview(.8,rewardParams).toFixed(3)} · 95% → {rewardPreview(.95,rewardParams).toFixed(3)}. When all three serve 0: {rewardPreview(0,rewardParams,0,0).toFixed(3)}.</p>
+          <p className="ll-caption">Lower the match-best bonus and/or increase the above-best slope to reward actual improvements over merely matching a heuristic. A separate jump remains at the success threshold; these controls do not guarantee learning.</p>
+          <button className="ll-refresh" disabled={editLock} onClick={()=>setRewardParams({...PAPER_REWARD})}><RefreshCcw size={13}/> Restore paper defaults</button>
         </details>
         <details className="ll-section" open><summary>Curriculum learning <ChevronDown size={13}/></summary>
           <label className="ll-checkbox"><input disabled={editLock} type="checkbox" checked={params.curriculum_enabled} onChange={e=>setParam('curriculum_enabled',e.target.checked)}/> Increase the number of active demands in three stages</label>
           {params.curriculum_enabled&&<><div className="ll-pair"><NumberSetting title="Stage 1 · demands" disabled={editLock} min={1} max={20} step={1} value={params.curriculum_first_demands} onChange={v=>setParam('curriculum_first_demands',v)}/><NumberSetting title="Stage 2 · demands" disabled={editLock} min={1} max={20} step={1} value={params.curriculum_second_demands} onChange={v=>setParam('curriculum_second_demands',v)}/></div>
           <div className="ll-pair"><NumberSetting title="Stage 1 ends · %" disabled={editLock} min={1} max={98} step={1} value={params.curriculum_first_end_pct} onChange={v=>setParam('curriculum_first_end_pct',v)}/><NumberSetting title="Stage 2 ends · %" disabled={editLock} min={2} max={99} step={1} value={params.curriculum_second_end_pct} onChange={v=>setParam('curriculum_second_end_pct',v)}/></div></>}
-          <p className="ll-caption">Stages use {params.curriculum_first_demands} → {params.curriculum_second_demands} → all {draft?.demands.length||0} demands (clamped to network size). Turn off to train on all demands from episode 1.</p>
+          <p className="ll-caption">Stages use {params.curriculum_first_demands} → {params.curriculum_second_demands} → all {draft?.demands.length||0} demands (clamped to network size). With these settings, stage 3 has {Math.max(0,episodes-Math.max(1,Math.round(episodes*params.curriculum_second_end_pct/100)))} of {episodes} episodes. Frozen checkpoint evaluations always include all demands.</p>
         </details>
         <label className="ll-checkbox"><input disabled={editLock} type="checkbox" checked={params.compare_baselines} onChange={e=>setParam('compare_baselines',e.target.checked)}/> Compute SCAR-Q / MCR-Q reference comparisons after training (slower)</label>
         {canTrain?<button className="ll-primary" onClick={start} disabled={working||!draft||!validTimeGrid}><Play size={16}/>{working?'Starting…':'Start new PPO training'}</button>:<button className="ll-stop" onClick={stop} disabled={working}><StopCircle size={16}/>Stop training</button>}
@@ -365,6 +414,8 @@ export default function LearningLab({studioScenario}) {
           {job?.error&&<div className="ll-error"><AlertCircle size={14}/>{job.error} · See backend/data/learning/{job.id}/run.log</div>}
           <div className="ll-chart-head"><strong>Measured performance · live</strong><div className="ll-mini-toggle"><button className={chartView==='satisfaction'?'active':''} onClick={()=>setChartView('satisfaction')}>Keys served</button><button className={chartView==='reward'?'active':''} onClick={()=>setChartView('reward')}>Reward</button></div></div>
           <PerformanceChart metrics={metrics} checkpoints={checkpoints} selectedEpisode={selected} view={chartView} live={live} totalEpisodes={job?.episodes||episodes} finished={job?.status==='complete'}/>
+          <p className="ll-caption">{chartView==='reward'?'Training-only heuristic-relative reward, plus its 25-episode trailing average. Frozen evaluations use a different metric, so they are not mixed into this plot.':'Training keys served vary with curriculum and sampled demands. The frozen evaluation curve uses the same fixed full-demand scenario at every checkpoint and is the fair learning-performance comparison.'}</p>
+          {job?.reward_shape&&<p className="ll-caption">This run used: match-best bonus {job.reward_shape.reward_at_or_above_hi}, above-best slope {job.reward_shape.reward_above_hi_slope}, success reward {job.reward_shape.reward_success}, zero-service safeguard {job.reward_shape.reward_zero_service_guard?'on':'off'}. See the saved job configuration for all seven constants.</p>}
           <div className="ll-stats"><Summary label="Live episode reward" value={(live?.stage==='training'||live?.stage==='complete')&&Number.isFinite(live?.partial_reward)?live.partial_reward.toFixed(3):'—'} detail={live?.stage==='training'?`Episode ${live.episode} · ${live.slots_done}/${live.slots_total} slots`:'Awaiting training slots'}/><Summary label="Latest completed keys served" value={percentage(finalMetric?.train_satisfaction)} detail={finalMetric?`Episode ${finalMetric.episode}`:'No completed episode yet'}/><Summary label="Frozen checkpoint keys" value={percentage(currentCheckpoint?.evaluation_satisfaction)} detail={`Episode ${selected??'—'} · fixed evaluation`}/></div>
         </section>
         <PolicyArchitecture shape={job?.shape||draftShape} stats={finalMetric} episodes={job?.episode||0} slotCount={job?.slots||computedSlots}/>

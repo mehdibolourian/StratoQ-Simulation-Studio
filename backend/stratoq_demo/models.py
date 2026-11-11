@@ -191,6 +191,8 @@ class LinkState(BaseModel):
     capacity_limit_bps: float | None = None
     stored_bits: float
     used_bps: float = 0.0
+    fresh_used_bps: float = 0.0  # Actual fresh link-key flow, not production capacity
+    qkp_used_bps: float = 0.0    # Actual stored-key consumption on this physical link
     active: bool  # Physical link is available (K_MAX > 0).
     activated: bool = False  # Algorithm enabled optical key generation this slot.
     allocated: bool = False  # Allocator used this link (fresh or QKP).

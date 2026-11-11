@@ -1,0 +1,11 @@
+{
+  "stage": "training",
+  "episode": 2687,
+  "slots_done": 19,
+  "slots_total": 24,
+  "partial_reward": 0.38771440734817475,
+  "partial_satisfaction": 0.6699904078170671,
+  "partial_served_bits": 29969882.235914484,
+  "partial_requested_bits": 44731807.927759774,
+  "episode_complete": false
+}

@@ -5,13 +5,14 @@ import * as THREE from 'three';
 import { fromWorld, position3D } from '../lib/geo';
 import { sceneBounds } from '../lib/sceneBounds.js';
 import { resolveVisualLinks } from '../lib/topology.js';
+import {allocationsForLink, linkKeyMode, linkDisplayState, linkRateIntensity, linkFallbackColor, linkTooltip} from '../lib/linkVisuals.js';
 
 const CYAN = '#56e9dc';
 const GOLD = '#ffd09a';
 const formatRate = value => value >= 1e6 ? `${(value / 1e6).toFixed(2)} Mbps` : `${((value || 0) / 1e3).toFixed(1)} kbps`;
 const formatBits = value => value >= 1e6 ? `${(value / 1e6).toFixed(2)} Mb` : value >= 1e3 ? `${(value / 1e3).toFixed(1)} kb` : `${Math.round(value || 0)} b`;
 
-function KeyTank({ fraction = 0, isBalloon = false }) {
+function KeyTank({ fraction = 0, isBalloon = false, showLabels = true }) {
   const fill = useRef();
   const level = useRef(Math.max(0.015, fraction));
   const height = 1.55;
@@ -34,9 +35,9 @@ function KeyTank({ fraction = 0, isBalloon = false }) {
     {[-0.93, 0.93].map(y => <mesh key={y} position={[0,y,0]}>
       <cylinderGeometry args={[0.57, 0.57, 0.10, 32]} />
       <meshStandardMaterial color="#647e8c" metalness={0.6} roughness={0.28} /></mesh>)}
-    <Html position={[0, -1.25, 0]} center distanceFactor={65} style={{pointerEvents:'none'}}>
+    {showLabels && <Html zIndexRange={[30,0]} position={[0, -1.25, 0]} center style={{pointerEvents:'none'}}>
       <div className="qkp-tank-label">QKP</div>
-    </Html>
+    </Html>}
   </group>;
 }
 
@@ -202,7 +203,7 @@ function GroundModel({ yaw = 0 }) {
   </group>;
 }
 
-function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange, onDragStart, onDragEnd, qkp }) {
+function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange, onDragStart, onDragEnd, qkp, showLabels = true }) {
   const pos = position3D(item);
   const isBalloon = type === 'balloon';
   const planeRef = useRef(null);
@@ -251,18 +252,18 @@ function ModelNode({ item, type, selected, dragMode, onSelect, onPositionChange,
         <meshBasicMaterial />
       </mesh>
     </group>
-    <KeyTank fraction={qkp?.fill_fraction || 0} isBalloon={isBalloon} />
+    <KeyTank fraction={qkp?.fill_fraction || 0} isBalloon={isBalloon} showLabels={showLabels} />
     {/* Compact label offset to the right, with a leader that avoids the model. */}
-    <Line points={isBalloon ? [[2.0, 7.45, 0], [4.4, 8.65, 0]] : [[1.4, 3.6, 0], [3.8, 4.85, 0]]}
+    {showLabels && <><Line points={isBalloon ? [[2.0, 7.45, 0], [4.4, 8.65, 0]] : [[1.4, 3.6, 0], [3.8, 4.85, 0]]}
       color={isBalloon ? GOLD : CYAN} transparent opacity={0.58} lineWidth={1} />
-    <Html position={isBalloon ? [4.4, 8.65, 0] : [3.8, 4.85, 0]}
-      center={false} distanceFactor={43} transform={false}
+    <Html zIndexRange={[30,0]} position={isBalloon ? [4.4, 8.65, 0] : [3.8, 4.85, 0]}
+      center={false} transform={false}
       style={{ pointerEvents: 'none', userSelect: 'none' }}>
       <div style={{ transform: 'translate(7px, -50%)' }}>
         <Badge title={item.name}
           kind={type} active={selected} qkp={qkp} />
       </div>
-    </Html>
+    </Html></>}
   </group>;
 }
 
@@ -302,7 +303,7 @@ function WeatherParticles({ effect, radius, visibilityKm=0.5, precipitationRate=
   </group>;
 }
 
-function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDragStart, onDragEnd }) {
+function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDragStart, onDragEnd, showLabels = true }) {
   const [x,,z] = position3D(weather);
   const dragging = useRef(false);
   const offset = useRef([0,0]);
@@ -362,7 +363,7 @@ function Cloud({ weather, selected, onSelect, dragMode, onPositionChange, onDrag
       <meshBasicMaterial color={selected?'#ffffff':hue} transparent opacity={.8} side={THREE.DoubleSide}/>
     </mesh>}
     <WeatherParticles effect={effect} radius={radius} visibilityKm={weather.visibility_km??0.5} precipitationRate={weather.precipitation_rate_mm_h??5} compact={historical}/>
-    {!historical && <Html position={[0,15,0]} center distanceFactor={75} style={{pointerEvents:'none'}}>
+    {!historical && showLabels && <Html zIndexRange={[30,0]} position={[0,15,0]} center style={{pointerEvents:'none'}}>
       <div className="weather-label">{effect==='rain'?'☂':effect==='snow'?'❄':'☁'} {effect} · {radius} km · {effect==='fog' ? `${weather.visibility_km??0.5} km vis` : `${weather.precipitation_rate_mm_h??5} mm/h`}</div>
     </Html>}
   </group>;
@@ -397,38 +398,47 @@ function MovingPhoton({points, phase=0, speed=0.19, haloColor="#ffbf39", coreCol
   </group>;
 }
 
-function ActivationPulse({points}) {
-  const line = useRef(null);
-  useFrame(({clock}) => {
-    const material = line.current?.material;
-    if (material) {
-      material.dashOffset = -clock.elapsedTime * 1.3;
-      material.opacity = 0.76 + 0.22 * Math.sin(clock.elapsedTime * 3.8);
-    }
-  });
+// Optical ON: continuous demand-colored lane, with small moving photon pulses.
+// QKP-only: broken demand-colored lane, carrying contrasting amber *square*
+// packets. The previous bright-white dashed overlay obscured the demand hue.
+function ActivationPulse({points,color="#ffca55"}) {
   return <>
-    <Line ref={line} points={points} color="#ffed9f" lineWidth={5.2}
-      transparent opacity={0.85} dashed dashSize={1.7} gapSize={1.15} depthWrite={false} />
-    <MovingPhoton points={points} phase={0}/>
-    <MovingPhoton points={points} phase={0.5}/>
+    <MovingPhoton points={points} phase={0} speed={.18} radius={.28} haloColor={color} coreColor={color}/>
+    <MovingPhoton points={points} phase={0.5} speed={.18} radius={.28} haloColor={color} coreColor={color}/>
   </>;
 }
 
-// Storage-only links also carry end-to-end keys. Show that transport on the
-// actual GS-to-HAP optical geometry, using amber rather than gold so viewers
-// never mistake already-stored QKP consumption for new photon generation.
+function MovingKeyPacket({points, phase=0, speed=.11}) {
+  const ref=useRef(null);
+  useFrame(({clock})=>{
+    if(!ref.current)return;
+    const f=(clock.elapsedTime*speed+phase)%1;
+    ref.current.position.set(
+      points[0][0]*(1-f)+points[1][0]*f,
+      points[0][1]*(1-f)+points[1][1]*f,
+      points[0][2]*(1-f)+points[1][2]*f,
+    );
+  });
+  return <group ref={ref} renderOrder={45}>
+    <mesh renderOrder={45}>
+      <boxGeometry args={[.63,.63,.63]}/>
+      <meshBasicMaterial color="#ffbd75" depthTest={false} depthWrite={false}/>
+    </mesh>
+    <mesh renderOrder={44}>
+      <boxGeometry args={[1.02,1.02,1.02]}/>
+      <meshBasicMaterial color="#e89443" transparent opacity={.30} depthTest={false} depthWrite={false}/>
+    </mesh>
+  </group>;
+}
+
 function StoredKeyPulse({points}) {
   return <>
-    <Line points={points} color="#f6be67" lineWidth={4} transparent opacity={0.94}
-      dashed dashSize={2.1} gapSize={1.2} depthWrite={false}/>
-    <MovingPhoton points={points} phase={0} speed={0.13} radius={0.39}
-      haloColor="#e29b42" coreColor="#ffe6aa" />
-    <MovingPhoton points={points} phase={0.5} speed={0.13} radius={0.39}
-      haloColor="#e29b42" coreColor="#ffe6aa" />
+    <MovingKeyPacket points={points} phase={0}/>
+    <MovingKeyPacket points={points} phase={0.5}/>
   </>;
 }
 
-function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode, onPositionChange, autoRotate }) {
+function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode, onPositionChange, autoRotate, showLabels = true }) {
   const [dragging, setDragging] = useState(false);
   const orbitRef = useRef();
   const { camera, size } = useThree();
@@ -513,11 +523,11 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
     <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMax,0,layout.axisZMax]]} color="#728aa3" lineWidth={1.2} />
     <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMin,0,layout.axisZMin]]} color="#728aa3" lineWidth={1.2} />
     <Line points={[[layout.axisXMin,0,layout.axisZMax],[layout.axisXMin,layout.axisHeight,layout.axisZMax]]} color="#d6a877" lineWidth={1.8} />
-    <Html position={[layout.axisXMin,layout.axisHeight+2,layout.axisZMax]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">ALT ↑</div></Html>
-    <Html position={[layout.axisXMax,0,layout.axisZMax+3]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LONGITUDE →</div></Html>
-    <Html position={[layout.axisXMin-3,0,layout.axisZMin]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label">LATITUDE ↑</div></Html>
-    <Html position={[layout.centerX,0,layout.axisZMax+4]} center distanceFactor={100} style={{pointerEvents:'none'}}><div className="axis-label subtle">{Math.abs(fromWorld(layout.centerX,layout.centerZ).lat).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lat>=0?'N':'S'} · {Math.abs(fromWorld(layout.centerX,layout.centerZ).lon).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lon<0?'W':'E'}</div></Html>
-    {scenario.weather_regions.map(w => <Cloud key={w.id} weather={w} selected={selectedId === w.id} onSelect={onSelect} dragMode={dragMode} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} />)}
+    {showLabels && <><Html zIndexRange={[30,0]} position={[layout.axisXMin,layout.axisHeight+2,layout.axisZMax]} center style={{pointerEvents:'none'}}><div className="axis-label">ALT ↑</div></Html>
+    <Html zIndexRange={[30,0]} position={[layout.axisXMax,0,layout.axisZMax+3]} center style={{pointerEvents:'none'}}><div className="axis-label">LONGITUDE →</div></Html>
+    <Html zIndexRange={[30,0]} position={[layout.axisXMin-3,0,layout.axisZMin]} center style={{pointerEvents:'none'}}><div className="axis-label">LATITUDE ↑</div></Html>
+    <Html zIndexRange={[30,0]} position={[layout.centerX,0,layout.axisZMax+4]} center style={{pointerEvents:'none'}}><div className="axis-label subtle">{Math.abs(fromWorld(layout.centerX,layout.centerZ).lat).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lat>=0?'N':'S'} · {Math.abs(fromWorld(layout.centerX,layout.centerZ).lon).toFixed(3)}° {fromWorld(layout.centerX,layout.centerZ).lon<0?'W':'E'}</div></Html></>}
+    {scenario.weather_regions.map(w => <Cloud key={w.id} weather={w} selected={selectedId === w.id} onSelect={onSelect} dragMode={dragMode} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} showLabels={showLabels} />)}
     {links.map(link => {
       const a = coords[link.source], b = coords[link.target];
       if (!a || !b) return null;
@@ -527,46 +537,82 @@ function Scene({ scenario, frame, topologyLinks, selectedId, onSelect, dragMode,
         [b[0], b[1] + (isHap(link.target) ? -0.25 : 2.5), b[2]],
       ];
       const cap = link.capacity_bps || 0;
+      const used = link.used_bps || 0;
+      const qkpDraw = link.qkp_used_bps ?? (link.allocated && !link.activated ? used : 0);
       const isSelected = selectedId === link.id;
       const unavailable = !link.enabled || !link.in_range;
-      const used = link.used_bps || 0;
-      const linkState = link.activated ? 'fresh' : link.allocated ? 'stored' : 'idle';
+      const allocations = allocationsForLink(link,frame,scenario);
+      const keyMode = linkKeyMode(link);
+      const displayState = linkDisplayState(link);
+      const intensity = linkRateIntensity(link,frame);
+      const hasQkp = keyMode==='qkp'||keyMode==='mixed';
+      const opticalOn = Boolean(link.activated);
       const midpoint = endpoints[0].map((v, i) => (v + endpoints[1][i]) / 2);
-      midpoint[1] += 1.4;
+      midpoint[1] += 1.5;
+      const label = displayState==='mixed' ? 'OPTICAL ON + QKP'
+        : displayState==='fresh' ? 'OPTICAL ON'
+        : displayState==='qkp' ? 'QKP ONLY · OPTICAL OFF' : null;
+      const rateLabel = displayState==='mixed' ? `Opt ${formatRate(cap)} · QKP ${formatRate(qkpDraw)}`
+        : displayState==='qkp' ? `QKP ${formatRate(qkpDraw)}`
+        : `Cap ${formatRate(cap)} · Used ${formatRate(used)}`;
       return <group key={link.id}>
-        {/* Wide transparent pick target; links can be clicked even when disabled. */}
-        <Line points={endpoints} color="#ffffff" lineWidth={15} transparent opacity={0.005}
+        {/* Raycast-only hit target: zero alpha and NO depth writes. Otherwise
+            its coincident wide line hides colored lanes or causes z-fighting. */}
+        <Line points={endpoints} color="#000000" lineWidth={15} transparent opacity={0}
+          depthTest={false} depthWrite={false} renderOrder={-1}
           onClick={e=>{e.stopPropagation();onSelect(link.id);}}
           onPointerOver={()=>{document.body.style.cursor='pointer';}}
           onPointerOut={()=>{document.body.style.cursor='auto';}} />
-        <Line points={endpoints}
-          color={unavailable ? '#e18485' : link.activated ? '#f5b934' : link.allocated ? '#e2a759' : '#52687b'}
-          lineWidth={link.activated ? 4.3 : link.allocated ? 3.8 : 1.4}
-          transparent opacity={unavailable ? 0.50 : link.activated ? 1 : link.allocated ? 0.92 : 0.28} />
-        {isSelected && <Line points={endpoints} color="#fff1c3" lineWidth={7} transparent opacity={0.21} depthWrite={false} />}
-        {/* Tiny single-line rate tag. Full information stays in the link inspector. */}
-        {(link.capacity_bps != null || isSelected) && <Html position={midpoint} center distanceFactor={36} style={{pointerEvents:'none'}}>
-          <div className={`link-throughput-label compact-link-label ${isSelected ? 'selected' : ''}`}
-            title={`Capacity: ${formatRate(cap)} · Used: ${formatRate(used)}`}>
-            {!link.enabled ? 'OFF' : !link.in_range ? 'OOR' : link.capacity_bps == null ? '…' : `${formatRate(cap)} / ${formatRate(used)}`}
+        {!allocations.length && <>
+          <Line points={endpoints} depthWrite={false} renderOrder={2}
+            color={linkFallbackColor(link)}
+            lineWidth={isSelected?4.4:displayState==='idle'?1.3:2.5+intensity*2}
+            transparent opacity={unavailable ? 0.30 : displayState==='idle' ? 0.28 : 0.55+0.42*intensity}
+            dashed={displayState==='qkp'} dashSize={1.7} gapSize={1.25} />
+          {hasQkp&&opticalOn&&<Line points={endpoints.map(p=>[p[0],p[1]+.5,p[2]])}
+            color="#ffbd75" dashed dashSize={1.1} gapSize={1.5} lineWidth={2.2}
+            transparent opacity={.9} depthWrite={false} renderOrder={3}/>}
+          {opticalOn&&<ActivationPulse points={endpoints} color="#65d5de"/>}
+          {hasQkp&&<StoredKeyPulse points={endpoints}/>}
+        </>}
+        {allocations.map((entry,i)=>{
+          // One parallel, hue-preserving lane per actually served demand.
+          const dx=endpoints[1][0]-endpoints[0][0], dz=endpoints[1][2]-endpoints[0][2];
+          const norm=Math.hypot(dx,dz)||1;
+          const shift=(i-(allocations.length-1)/2)*1.05;
+          const lane=endpoints.map(pt=>[pt[0]-dz/norm*shift,pt[1]+.14,pt[2]+dx/norm*shift]);
+          const qkpRail=lane.map(pt=>[pt[0],pt[1]+.50,pt[2]]);
+          return <React.Fragment key={entry.id}>
+            <Line points={lane} color={entry.color} renderOrder={5+i*2}
+              lineWidth={isSelected||selectedId===entry.id?6:3.0+2.2*intensity}
+              transparent opacity={.64+.36*intensity} depthWrite={false}
+              dashed={!opticalOn&&hasQkp} dashSize={1.65} gapSize={1.25}/>
+            {/* Gold dashed rail exists ONLY when stored keys are consumed.
+                Offset it instead of painting white on top of the demand color. */}
+            {hasQkp&&opticalOn&&<Line points={qkpRail} color="#ffb866" lineWidth={2.1} renderOrder={6+i*2}
+              dashed dashSize={1.15} gapSize={1.55} transparent opacity={.94} depthWrite={false}/>}
+            {opticalOn&&<ActivationPulse points={lane} color={entry.color}/>}
+            {hasQkp&&<StoredKeyPulse points={hasQkp&&opticalOn?qkpRail:lane}/>}
+          </React.Fragment>;
+        })}
+        {isSelected && <Line points={endpoints} color="#fff1c3" lineWidth={8} renderOrder={1}
+          transparent opacity={.16} depthWrite={false} />}
+        {showLabels && (link.capacity_bps != null || isSelected || label) && <Html zIndexRange={[30,0]}
+          position={midpoint} center style={{pointerEvents:'none',userSelect:'none'}}>
+          <div className={`sq-link-annotation ${isSelected?'selected':''}`}
+            title={`Capacity: ${formatRate(cap)} · Used: ${formatRate(used)} · ${linkTooltip(link,frame,scenario)}`}>
+            {label&&<span className={`optical-state-tag ${displayState}`}>{label}</span>}
+            {(link.capacity_bps != null || isSelected) && <div className="link-throughput-label compact-link-label">{rateLabel}</div>}
           </div>
-        </Html>}
-        {link.activated && <><Line points={endpoints} color="#ffcb55" lineWidth={9} transparent opacity={0.18} depthWrite={false} /><ActivationPulse points={endpoints} /></>}
-        {link.allocated && !link.activated && <StoredKeyPulse points={endpoints} />}
-        {linkState !== 'idle' && <Html position={[midpoint[0],midpoint[1]+1.7,midpoint[2]]}
-          center distanceFactor={40} style={{pointerEvents:'none'}}>
-          <span className={`optical-state-tag ${linkState}`}>
-            {link.activated ? 'OPTICAL ON' : 'QKP FLOW'}
-          </span>
         </Html>}
       </group>;
     })}
     {/* No direct GS–GS route line: a served demand is carried over two
         physical GS↔HAP links, which have their own live animation. */}
     {scenario.ground_stations.map(gs => <ModelNode key={gs.id} item={gs} type="ground" selected={selectedId===gs.id}
-      dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[gs.id]} />)}
+      dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[gs.id]} showLabels={showLabels} />)}
     {scenario.balloons.map(hap => <ModelNode key={hap.id} item={hap} type="balloon" selected={selectedId===hap.id}
-      dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[hap.id]} />)}
+      dragMode={dragMode} onSelect={onSelect} onPositionChange={onPositionChange} onDragStart={()=>setDragging(true)} onDragEnd={()=>setDragging(false)} qkp={qkps[hap.id]} showLabels={showLabels} />)}
     <OrbitControls ref={orbitRef} makeDefault enabled={!dragging} minDistance={12}
       maxDistance={Math.max(600,cameraDistance*5)} minPolarAngle={0.10} maxPolarAngle={Math.PI * 0.48}
       enableDamping dampingFactor={0.075} autoRotate={autoRotate && !dragging} autoRotateSpeed={0.32} />

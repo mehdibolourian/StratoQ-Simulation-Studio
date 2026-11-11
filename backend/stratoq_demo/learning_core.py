@@ -9,6 +9,7 @@ an assertion of bit-for-bit reproduction of the canonical paper experiments.
 """
 from __future__ import annotations
 from dataclasses import dataclass
+from collections.abc import Mapping
 import math
 import numpy as np
 
@@ -129,23 +130,69 @@ def observation(scenario, physical, slot, buffers, requested):
     return obs
 
 
-def paper_shaped_reward(achieved, scarq, mcrq, requested):
+
+@dataclass(frozen=True)
+class RewardShape:
+    """User-configurable constants in the published four-branch reward equation.
+
+    All defaults exactly reproduce the v132 reward, including its discontinuities.
+    Epsilon remains a fixed numerical guard, not a learning hyperparameter.
+    """
+    reward_success_threshold: float = .95
+    reward_success: float = 1.
+    reward_at_or_above_hi: float = .6
+    reward_above_hi_slope: float = .4
+    reward_between_base: float = .1
+    reward_between_gain: float = .1
+    reward_below_slope: float = 1.
+    reward_zero_service_guard: bool = False  # Optional departure from paper equation.
+
+
+def validate_reward_shape(data=None):
+    """Validate UI/API/worker parameters consistently, including nonfinite values."""
+    if isinstance(data, RewardShape):
+        shape = data
+    else:
+        source = data if isinstance(data, Mapping) else {}
+        shape = RewardShape(**{name: source[name] for name in RewardShape.__dataclass_fields__ if name in source})
+    for name, value in vars(shape).items():
+        if name=='reward_zero_service_guard':
+            if not isinstance(value,bool):
+                raise ValueError('reward_zero_service_guard must be a boolean.')
+            continue
+        try:
+            numeric = float(value)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise ValueError(f'{name} must be a finite number.') from exc
+        upper = 1 if name=='reward_success_threshold' else 5 if name in ('reward_below_slope','reward_above_hi_slope') else 2
+        if not math.isfinite(numeric) or not 0 <= numeric <= upper:
+            raise ValueError(f'{name} must be between 0 and {upper}.')
+    return shape
+
+def paper_shaped_reward(achieved, scarq, mcrq, requested, reward_shape=None):
     """Per-demand heuristic-relative shaped reward as in paper-aligned Eq.14.
 
     Dictionaries keyed by *stable demand ID*, avoiding the active-demand
     reindexing bug present in some notebook helper variants.
     """
+    shape = validate_reward_shape(reward_shape)
     scores=[]
     for demand_id,requirement in requested.items():
         if requirement<=0: continue
-        rho=min(1.,max(0.,achieved.get(demand_id,0.))/(requirement+1e-8))
-        scar=min(1.,max(0.,scarq.get(demand_id,0.))/(requirement+1e-8))
-        mcr=min(1.,max(0.,mcrq.get(demand_id,0.))/(requirement+1e-8))
+        # requirement > 0: do not offset the denominator, which previously
+        # misclassified exact satisfaction=0.95 as below the success threshold.
+        rho=min(1.,max(0.,achieved.get(demand_id,0.))/requirement)
+        scar=min(1.,max(0.,scarq.get(demand_id,0.))/requirement)
+        mcr=min(1.,max(0.,mcrq.get(demand_id,0.))/requirement)
         hi,lo=max(scar,mcr),min(scar,mcr)
-        if rho>=0.95: r=1.
-        elif rho>=hi: r=0.6+0.4*(rho-hi)
-        elif rho>=lo: r=0.1+0.1*(rho-lo)/(hi-lo+1e-8)
-        else: r=-(lo-rho)
+        if shape.reward_zero_service_guard and rho==0. and hi==0.:
+            # Without this opt-in guard the paper equation awards +0.6 to an
+            # idle policy whenever *both* heuristics also deliver zero.
+            r=0.
+        elif rho>=shape.reward_success_threshold: r=shape.reward_success
+        elif rho>=hi: r=shape.reward_at_or_above_hi+shape.reward_above_hi_slope*(rho-hi)
+        elif rho>=lo: r=shape.reward_between_base+shape.reward_between_gain*(rho-lo)/(hi-lo+1e-8)
+        else: r=-shape.reward_below_slope*(lo-rho)
         scores.append(r)
     return float(np.mean(scores)) if scores else 0.
 
@@ -216,7 +263,7 @@ def sample_choices(policy, obs, base_mask, port_data, deterministic=False):
 
 
 def ppo_update(policy, optimizer, rollout, port_data, gamma=.99, gae_lambda=.95,
-               clip=.2, ppo_epochs=5, batch_size=64, entropy_coef=.01):
+               clip=.2, ppo_epochs=8, batch_size=16, entropy_coef=.008):
     """On-policy PPO with GAE, policy clipping, value loss and entropy bonus."""
     import torch
     if not rollout: return {'policy_loss':0.,'value_loss':0.,'entropy':0.}
@@ -239,6 +286,8 @@ def ppo_update(policy, optimizer, rollout, port_data, gamma=.99, gae_lambda=.95,
     targets=torch.tensor(returns,dtype=torch.float32)
     adv=torch.tensor(advantages,dtype=torch.float32)
     stats=[]
+    with torch.no_grad():
+        weights_before=[p.detach().clone() for p in policy.parameters()]
     for _ in range(ppo_epochs):
         for ids in torch.randperm(len(rollout)).split(batch_size):
             logits, v=policy(observations[ids])
@@ -252,6 +301,17 @@ def ppo_update(policy, optimizer, rollout, port_data, gamma=.99, gae_lambda=.95,
             optimizer.zero_grad(); loss.backward()
             torch.nn.utils.clip_grad_norm_(policy.parameters(),.5)
             optimizer.step()
-            stats.append((actor_loss.item(),critic_loss.item(),ent.item()))
+            # Approximate KL and clip ratio describe whether PPO is updating,
+            # not whether the policy performs better on held-out episodes.
+            with torch.no_grad():
+                log_ratio=logp-olds[ids]
+                approx_kl=((ratio-1.)-log_ratio).mean().item()
+                clipped=((ratio-1.).abs()>clip).float().mean().item()
+            stats.append((actor_loss.item(),critic_loss.item(),ent.item(),approx_kl,clipped))
     averaged=np.mean(stats,axis=0)
-    return dict(zip(('policy_loss','value_loss','entropy'),map(float,averaged)))
+    with torch.no_grad():
+        delta_sq=sum(float((p.detach()-old).square().sum()) for p,old in zip(policy.parameters(),weights_before))
+        baseline_sq=sum(float(old.square().sum()) for old in weights_before)
+    result=dict(zip(('policy_loss','value_loss','entropy','approx_kl','clip_fraction'),map(float,averaged)))
+    result['relative_weight_change']=math.sqrt(delta_sq)/max(1.e-12,math.sqrt(baseline_sq))
+    return result

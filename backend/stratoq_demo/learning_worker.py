@@ -20,7 +20,8 @@ import time
 import traceback
 import numpy as np
 from .learning_core import (topology_shape, observation, port_mask, demand_indices,
-                            make_policy, sample_choices, ppo_update, paper_shaped_reward)
+                            make_policy, sample_choices, ppo_update, paper_shaped_reward,
+                            validate_reward_shape)
 from .learning_presets import preset_scenario, validate_learning_scenario, PRESET
 from .allocator_algorithms import (PathOption, require_gurobi, select_and_solve_slot,
                                    solve_slot)
@@ -88,7 +89,7 @@ def rate_schedule(scenario, slots, duration, rng=None):
     return by_demand
 
 
-def curriculum_schedule(schedule, episode, episodes, rng, *, enabled=True, first_demands=1, second_demands=2, first_end_pct=33, second_end_pct=67):
+def curriculum_schedule(schedule, episode, episodes, rng, *, enabled=True, first_demands=1, second_demands=2, first_end_pct=12, second_end_pct=30):
     """Optional, gradual demand-count curriculum on a fixed network.
 
     The progression applies to episode *training data*, not the policy shape.
@@ -148,7 +149,8 @@ def slot_inputs(scenario, physical, rates, buffers, schedule, slot):
 
 
 def run_episode(policy, scenario, physical, all_rates, max_storage, gp,
-                schedule, port_data, training=False, rng_seed=42, make_frames=False, progress=None):
+                schedule, port_data, training=False, rng_seed=42, make_frames=False, progress=None,
+                reward_shape=None):
     buffers={key:0. for key in max_storage}
     duration=scenario.config.slot_seconds
     rollout=[]; total_reward=0.;total_served=0.;total_requested=0.; frames=[]
@@ -166,7 +168,7 @@ def run_episode(policy, scenario, physical, all_rates, max_storage, gp,
                 duration,'scar_q',seed=rng_seed+t,gp=gp)
             _,mcr_result=select_and_solve_slot(actual,rates,prev_buffers,max_storage,
                 duration,'mcr_q',seed=rng_seed+t,n_samples=1,gp=gp)
-            reward=paper_shaped_reward(served,scar_result[0],mcr_result[0],requested)
+            reward=paper_shaped_reward(served,scar_result[0],mcr_result[0],requested,reward_shape)
         else:
             # Evaluation reward is satisfaction-shaped in the same *scale*;
             # checkpoint comparison is based on delivered keys, not reward.
@@ -203,6 +205,8 @@ def run_episode(policy, scenario, physical, all_rates, max_storage, gp,
                 states.append(LinkState(**l,capacity_bps=round(rates[l['id']],2),
                                         stored_bits=round(buffers[l['id']],1),
                                         used_bps=round(link_use[l['id']],2),
+                                        fresh_used_bps=round(max(0.,live.get(l['id'],0.)),2),
+                                        qkp_used_bps=round(max(0.,saved.get(l['id'],0.)),2),
                                         active=rates[l['id']]>1.e-8,
                                         activated=l['id'] in activated,
                                         allocated=link_use[l['id']]>1.e-8))
@@ -283,7 +287,10 @@ def train(job_dir):
     if not any(feasible_routes(scenario, rates) for rates in all_rates):
         raise ValueError('No physically feasible two-hop path for any demand under the real optical model; cannot train.')
     policy=make_policy(shape)
-    optimizer=torch.optim.Adam(policy.parameters(),lr=float(cfg.get('learning_rate',1.e-4)))
+    optimizer=torch.optim.Adam(policy.parameters(),lr=float(cfg.get('learning_rate',2.e-4)))
+    reward_shape=validate_reward_shape(cfg)
+    status['reward_shape']=vars(reward_shape).copy()  # Visible, reproducible run metadata.
+    update()
     ports=demand_indices(scenario)
     rng=np.random.default_rng(seed)
     eval_schedule=rate_schedule(scenario,cfg['slots'],scenario.config.slot_seconds)
@@ -314,13 +321,15 @@ def train(job_dir):
                     'evaluation_served_bits':result['served_bits']}
         torch.save({'state_dict':policy.state_dict(),'shape':vars(shape),
                     'preset':PRESET,'slots':cfg['slots'],
-                    'slot_seconds':scenario.config.slot_seconds,'seed':seed},
+                    'slot_seconds':scenario.config.slot_seconds,'seed':seed,
+                    'reward_shape':vars(reward_shape)},
                     job_dir/f'checkpoint_{episode:06d}.pt')
         write_json(job_dir/f'evaluation_{episode:06d}.json',{
             'episode':episode,'summary':{k:result[k] for k in
                ('reward','satisfaction','served_bits','requested_bits')},
             'frames':result['frames'],
             'baselines':status.get('baselines',{}),
+            'reward_shape':vars(reward_shape),
             'scenario':scenario.model_dump(mode='json')})
         status['checkpoints'].append(checkpoint)
         status.pop('slot_progress',None)
@@ -347,23 +356,24 @@ def train(job_dir):
                enabled=cfg.get('curriculum_enabled',True),
                first_demands=cfg.get('curriculum_first_demands',1),
                second_demands=cfg.get('curriculum_second_demands',2),
-               first_end_pct=cfg.get('curriculum_first_end_pct',33),
-               second_end_pct=cfg.get('curriculum_second_end_pct',67))
+               first_end_pct=cfg.get('curriculum_first_end_pct',12),
+               second_end_pct=cfg.get('curriculum_second_end_pct',30))
         status.update(stage='training',curriculum_active_demands=active_demands)
         status.pop('slot_progress',None)
         update()
         collected=run_episode(policy,scenario,physical,all_rates,max_storage,gp,
                             schedule,ports,training=True,rng_seed=seed+ep,
-                            progress=lambda data:stream('training',ep,data))
+                            progress=lambda data:stream('training',ep,data),
+                            reward_shape=reward_shape)
         status['stage']='ppo-update';update()
-        ent=float(cfg.get('entropy_start',.01)) + (float(cfg.get('entropy_end',.001))-
-              float(cfg.get('entropy_start',.01)))*ep/max(1,cfg['episodes'])
+        ent=float(cfg.get('entropy_start',.008)) + (float(cfg.get('entropy_end',.0003))-
+              float(cfg.get('entropy_start',.008)))*ep/max(1,cfg['episodes'])
         update_stats=ppo_update(policy,optimizer,collected['rollout'],ports,
                        gamma=float(cfg.get('gamma',.99)),
                        gae_lambda=float(cfg.get('gae_lambda',.95)),
                        clip=float(cfg.get('clip',.2)),
-                       entropy_coef=ent,ppo_epochs=int(cfg.get('ppo_epochs',5)),
-                       batch_size=int(cfg.get('batch_size',64)))
+                       entropy_coef=ent,ppo_epochs=int(cfg.get('ppo_epochs',8)),
+                       batch_size=int(cfg.get('batch_size',16)))
         line={'episode':ep,'active_demands':active_demands,'train_reward':collected['reward'],
               'train_satisfaction':collected['satisfaction'],
               'train_served_bits':collected['served_bits'],'entropy_coef':ent,**update_stats}

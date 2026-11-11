@@ -1,0 +1,18 @@
+{
+  "id": "77c0f66a2e5c4739a1023ccba9cb6837",
+  "status": "stopped",
+  "stage": "stopped",
+  "episode": 0,
+  "episodes": 48,
+  "checkpoints": [],
+  "error": null,
+  "started_at": 1794358182.3262222,
+  "physical_progress": {
+    "stage": "complete",
+    "total": 12,
+    "completed": 12,
+    "cached": 12,
+    "computed": 0,
+    "workers": 0
+  }
+}

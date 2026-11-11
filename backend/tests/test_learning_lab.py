@@ -157,7 +157,7 @@ def test_complete_worker_pipeline_with_mocked_physics_and_lp(monkeypatch,tmp_pat
 def test_curriculum_uses_progressive_topology_relative_demands():
     schedules={'d0':[1.]*3,'d1':[1.]*3,'d2':[1.]*3}
     rng=np.random.default_rng(42)
-    for episode,expected in [(1,1),(10,1),(11,2),(20,2),(21,3),(30,3)]:
+    for episode,expected in [(1,1),(4,1),(5,2),(9,2),(10,3),(30,3)]:
         active,count=learning_worker.curriculum_schedule(schedules,episode,30,rng)
         assert count==expected
         assert sum(any(v) for v in active.values())==expected

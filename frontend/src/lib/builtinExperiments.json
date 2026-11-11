@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": "1.3.2",
   "traces": {
     "csv-ontario-6h": {
       "first": [
@@ -49,28 +49,18 @@
   "experiments": [
     {
       "id": "corridor-scar",
-      "title": "01 \u00b7 Scarcity-first | SCAR-Q \u00b7 6h",
-      "family": "corridor",
-      "angle": "Greedy: prioritizes demands with scarce feasible routes, then chooses low-contention paths.",
-      "watch": "Inspect which demand gets a scarce HAP and which is blocked at peak demand.",
+      "title": "01 \u00b7 SCAR-Q \u00b7 24h",
+      "family": "same-network",
+      "angle": "Greedy slot-by-slot resource allocation with QKP.",
+      "watch": "See which demand gets service as weather and optical rates change.",
       "scenario": {
         "ground_stations": [
-          {
-            "id": "gs-tim",
-            "name": "Timmins",
-            "lat": 48.4758,
-            "lon": -81.3305,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
           {
             "id": "gs-if",
             "name": "Iroquois Falls",
             "lat": 48.7666,
             "lon": -80.6826,
-            "capacity_bits": 65000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -80,771 +70,7 @@
             "name": "Cochrane",
             "lat": 49.0593,
             "lon": -81.0175,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-kl",
-            "name": "Kirkland Lake",
-            "lat": 48.1445,
-            "lon": -80.031,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          }
-        ],
-        "balloons": [
-          {
-            "id": "hap-west",
-            "name": "Strato W \u00b7 May trace",
-            "lat": 48.62,
-            "lon": -81.09,
-            "altitude_km": 22.61875,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:may-strato-6h",
-            "trajectory_name": "May5_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.62,
-            "trajectory_start_lon": -81.09,
-            "trajectory_source_lat": 46.16597813,
-            "trajectory_source_lon": -79.07758858
-          },
-          {
-            "id": "hap-central",
-            "name": "Strato C \u00b7 June trace",
-            "lat": 48.8,
-            "lon": -80.72,
-            "altitude_km": 22.07281,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:june-strato-6h",
-            "trajectory_name": "June1_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.8,
-            "trajectory_start_lon": -80.72,
-            "trajectory_source_lat": 45.95251688,
-            "trajectory_source_lon": -78.99370555
-          },
-          {
-            "id": "hap-east",
-            "name": "Strato E \u00b7 CSV trace",
-            "lat": 48.44,
-            "lon": -80.3,
-            "altitude_km": 25.0,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:csv-ontario-6h",
-            "trajectory_name": "balloon_sim_data(1).csv (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.44,
-            "trajectory_start_lon": -80.3,
-            "trajectory_source_lat": 49.0,
-            "trajectory_source_lon": -81.0
-          }
-        ],
-        "demands": [
-          {
-            "id": "d-tim-if",
-            "source": "gs-tim",
-            "target": "gs-if",
-            "rate_bps": 2300,
-            "pattern": "dual_peak",
-            "peak_hour": 1.5,
-            "second_peak_hour": 4.7,
-            "peak_width_hours": 0.9,
-            "peak_uplift_pct": 85
-          },
-          {
-            "id": "d-coch-tim",
-            "source": "gs-coch",
-            "target": "gs-tim",
-            "rate_bps": 1700,
-            "pattern": "constant"
-          },
-          {
-            "id": "d-kl-if",
-            "source": "gs-kl",
-            "target": "gs-if",
-            "rate_bps": 1900,
-            "pattern": "bursty",
-            "peak_hour": 0.8,
-            "burst_interval_hours": 2.3,
-            "burst_duration_minutes": 55,
-            "peak_uplift_pct": 90
-          },
-          {
-            "id": "d-coch-kl",
-            "source": "gs-coch",
-            "target": "gs-kl",
-            "rate_bps": 1500,
-            "pattern": "diurnal",
-            "peak_hour": 3.3,
-            "peak_width_hours": 1.2,
-            "peak_uplift_pct": 100
-          },
-          {
-            "id": "d-tim-kl",
-            "source": "gs-tim",
-            "target": "gs-kl",
-            "rate_bps": 1400,
-            "pattern": "dual_peak",
-            "peak_hour": 2,
-            "second_peak_hour": 5,
-            "peak_width_hours": 0.85,
-            "peak_uplift_pct": 75
-          },
-          {
-            "id": "d-if-coch",
-            "source": "gs-if",
-            "target": "gs-coch",
-            "rate_bps": 1800,
-            "pattern": "constant"
-          }
-        ],
-        "weather_regions": [
-          {
-            "id": "wx-front",
-            "name": "Moving rain band",
-            "lat": 48.78,
-            "lon": -80.86,
-            "radius_km": 24,
-            "attenuation_db": 0,
-            "effect": "rain",
-            "precipitation_rate_mm_h": 7,
-            "active_from_seconds": 6000,
-            "active_until_seconds": 15300,
-            "ramp_seconds": 900,
-            "drift_lon_deg_per_hour": 0.07,
-            "drift_lat_deg_per_hour": -0.015
-          },
-          {
-            "id": "wx-fog",
-            "name": "Evening valley fog",
-            "lat": 48.5,
-            "lon": -81.31,
-            "radius_km": 14,
-            "attenuation_db": 0,
-            "effect": "fog",
-            "visibility_km": 0.55,
-            "active_from_seconds": 12600,
-            "active_until_seconds": 20400,
-            "ramp_seconds": 1200
-          }
-        ],
-        "link_overrides": [],
-        "config": {
-          "slot_seconds": 900,
-          "slots": 24,
-          "horizon_seconds": 21600,
-          "allocation_mode": "scar_q",
-          "weather_source": "manual",
-          "mcr_samples": 16,
-          "allocator_seed": 42,
-          "channel_workers": 10,
-          "optimality_gap": 0.02,
-          "optimal_time_limit_seconds": 240,
-          "qkp_enabled": true,
-          "optical": {
-            "wavelength_nm": 1550,
-            "beam_waist_m": 0.15,
-            "rx_aperture_down_m": 0.75,
-            "rx_aperture_up_m": 0.4,
-            "obscuration_ratio": 0.3,
-            "cn0": 1e-13,
-            "pointing_error_rad": 1e-07,
-            "tracking_efficiency": 0.85,
-            "detector_efficiency": 0.85,
-            "ao_correction_order": 5,
-            "source_rate_hz": 80000000.0,
-            "source_efficiency": 0.01,
-            "qber": 0.04
-          }
-        }
-      },
-      "duration_note": "Six-hour comparison; May and June use high-altitude flight excerpts.",
-      "milestones": [
-        {
-          "seconds": 5400,
-          "title": "Demand peak",
-          "why": "A high requested-key period tests which routes receive scarce terminals.",
-          "details": "Inspect per-demand served rates and selected routes. This time is scheduled by the synthetic demand profiles; allocation outcomes are computed, not predetermined."
-        },
-        {
-          "seconds": 6300,
-          "title": "Rain enters",
-          "why": "The moving rain region starts affecting optical attenuation where paths intersect it.",
-          "details": "Rain begins at T+1:40 and ramps over 15 minutes. Compare physical link availability and served rates in this and adjacent slots; the same weather is used in all three algorithms."
-        },
-        {
-          "seconds": 13500,
-          "title": "Fog develops",
-          "why": "A second weather constraint tests route choices during reduced visibility.",
-          "details": "Fog begins at T+3:30 and ramps over 20 minutes. Whether a specific link loses capacity depends on HAP position and geometry."
-        },
-        {
-          "seconds": 15300,
-          "title": "Rain clears",
-          "why": "The rain interval ends and link capacity may recover.",
-          "details": "The moving rain band is deactivated after T+4:15. Inspect whether the allocator returns to earlier routes."
-        }
-      ]
-    },
-    {
-      "id": "corridor-mcr",
-      "title": "02 \u00b7 Candidate search | MCR-Q \u00b7 6h",
-      "family": "corridor",
-      "angle": "Monte Carlo: samples different feasible assignments and selects the strongest after online LP solves.",
-      "watch": "Compare per-slot candidate solves and whether randomized alternatives use HAPs better.",
-      "scenario": {
-        "ground_stations": [
-          {
-            "id": "gs-tim",
-            "name": "Timmins",
-            "lat": 48.4758,
-            "lon": -81.3305,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-if",
-            "name": "Iroquois Falls",
-            "lat": 48.7666,
-            "lon": -80.6826,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-coch",
-            "name": "Cochrane",
-            "lat": 49.0593,
-            "lon": -81.0175,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-kl",
-            "name": "Kirkland Lake",
-            "lat": 48.1445,
-            "lon": -80.031,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          }
-        ],
-        "balloons": [
-          {
-            "id": "hap-west",
-            "name": "Strato W \u00b7 May trace",
-            "lat": 48.62,
-            "lon": -81.09,
-            "altitude_km": 22.61875,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:may-strato-6h",
-            "trajectory_name": "May5_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.62,
-            "trajectory_start_lon": -81.09,
-            "trajectory_source_lat": 46.16597813,
-            "trajectory_source_lon": -79.07758858
-          },
-          {
-            "id": "hap-central",
-            "name": "Strato C \u00b7 June trace",
-            "lat": 48.8,
-            "lon": -80.72,
-            "altitude_km": 22.07281,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:june-strato-6h",
-            "trajectory_name": "June1_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.8,
-            "trajectory_start_lon": -80.72,
-            "trajectory_source_lat": 45.95251688,
-            "trajectory_source_lon": -78.99370555
-          },
-          {
-            "id": "hap-east",
-            "name": "Strato E \u00b7 CSV trace",
-            "lat": 48.44,
-            "lon": -80.3,
-            "altitude_km": 25.0,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:csv-ontario-6h",
-            "trajectory_name": "balloon_sim_data(1).csv (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.44,
-            "trajectory_start_lon": -80.3,
-            "trajectory_source_lat": 49.0,
-            "trajectory_source_lon": -81.0
-          }
-        ],
-        "demands": [
-          {
-            "id": "d-tim-if",
-            "source": "gs-tim",
-            "target": "gs-if",
-            "rate_bps": 2300,
-            "pattern": "dual_peak",
-            "peak_hour": 1.5,
-            "second_peak_hour": 4.7,
-            "peak_width_hours": 0.9,
-            "peak_uplift_pct": 85
-          },
-          {
-            "id": "d-coch-tim",
-            "source": "gs-coch",
-            "target": "gs-tim",
-            "rate_bps": 1700,
-            "pattern": "constant"
-          },
-          {
-            "id": "d-kl-if",
-            "source": "gs-kl",
-            "target": "gs-if",
-            "rate_bps": 1900,
-            "pattern": "bursty",
-            "peak_hour": 0.8,
-            "burst_interval_hours": 2.3,
-            "burst_duration_minutes": 55,
-            "peak_uplift_pct": 90
-          },
-          {
-            "id": "d-coch-kl",
-            "source": "gs-coch",
-            "target": "gs-kl",
-            "rate_bps": 1500,
-            "pattern": "diurnal",
-            "peak_hour": 3.3,
-            "peak_width_hours": 1.2,
-            "peak_uplift_pct": 100
-          },
-          {
-            "id": "d-tim-kl",
-            "source": "gs-tim",
-            "target": "gs-kl",
-            "rate_bps": 1400,
-            "pattern": "dual_peak",
-            "peak_hour": 2,
-            "second_peak_hour": 5,
-            "peak_width_hours": 0.85,
-            "peak_uplift_pct": 75
-          },
-          {
-            "id": "d-if-coch",
-            "source": "gs-if",
-            "target": "gs-coch",
-            "rate_bps": 1800,
-            "pattern": "constant"
-          }
-        ],
-        "weather_regions": [
-          {
-            "id": "wx-front",
-            "name": "Moving rain band",
-            "lat": 48.78,
-            "lon": -80.86,
-            "radius_km": 24,
-            "attenuation_db": 0,
-            "effect": "rain",
-            "precipitation_rate_mm_h": 7,
-            "active_from_seconds": 6000,
-            "active_until_seconds": 15300,
-            "ramp_seconds": 900,
-            "drift_lon_deg_per_hour": 0.07,
-            "drift_lat_deg_per_hour": -0.015
-          },
-          {
-            "id": "wx-fog",
-            "name": "Evening valley fog",
-            "lat": 48.5,
-            "lon": -81.31,
-            "radius_km": 14,
-            "attenuation_db": 0,
-            "effect": "fog",
-            "visibility_km": 0.55,
-            "active_from_seconds": 12600,
-            "active_until_seconds": 20400,
-            "ramp_seconds": 1200
-          }
-        ],
-        "link_overrides": [],
-        "config": {
-          "slot_seconds": 900,
-          "slots": 24,
-          "horizon_seconds": 21600,
-          "allocation_mode": "mcr_q",
-          "weather_source": "manual",
-          "mcr_samples": 16,
-          "allocator_seed": 42,
-          "channel_workers": 10,
-          "optimality_gap": 0.02,
-          "optimal_time_limit_seconds": 240,
-          "qkp_enabled": true,
-          "optical": {
-            "wavelength_nm": 1550,
-            "beam_waist_m": 0.15,
-            "rx_aperture_down_m": 0.75,
-            "rx_aperture_up_m": 0.4,
-            "obscuration_ratio": 0.3,
-            "cn0": 1e-13,
-            "pointing_error_rad": 1e-07,
-            "tracking_efficiency": 0.85,
-            "detector_efficiency": 0.85,
-            "ao_correction_order": 5,
-            "source_rate_hz": 80000000.0,
-            "source_efficiency": 0.01,
-            "qber": 0.04
-          }
-        }
-      },
-      "duration_note": "Six-hour comparison; May and June use high-altitude flight excerpts.",
-      "milestones": [
-        {
-          "seconds": 5400,
-          "title": "Demand peak",
-          "why": "A high requested-key period tests which routes receive scarce terminals.",
-          "details": "Inspect per-demand served rates and selected routes. This time is scheduled by the synthetic demand profiles; allocation outcomes are computed, not predetermined."
-        },
-        {
-          "seconds": 6300,
-          "title": "Rain enters",
-          "why": "The moving rain region starts affecting optical attenuation where paths intersect it.",
-          "details": "Rain begins at T+1:40 and ramps over 15 minutes. Compare physical link availability and served rates in this and adjacent slots; the same weather is used in all three algorithms."
-        },
-        {
-          "seconds": 13500,
-          "title": "Fog develops",
-          "why": "A second weather constraint tests route choices during reduced visibility.",
-          "details": "Fog begins at T+3:30 and ramps over 20 minutes. Whether a specific link loses capacity depends on HAP position and geometry."
-        },
-        {
-          "seconds": 15300,
-          "title": "Rain clears",
-          "why": "The rain interval ends and link capacity may recover.",
-          "details": "The moving rain band is deactivated after T+4:15. Inspect whether the allocator returns to earlier routes."
-        }
-      ]
-    },
-    {
-      "id": "corridor-opt",
-      "title": "03 \u00b7 Whole-horizon | Optimal \u00b7 6h",
-      "family": "corridor",
-      "angle": "Full-horizon MILP: jointly selects time-dependent routes, optical generation and QKP use with future weather known.",
-      "watch": "Compare total delivered keys and solver runtime. Offline foresight is not a fair online information assumption.",
-      "scenario": {
-        "ground_stations": [
-          {
-            "id": "gs-tim",
-            "name": "Timmins",
-            "lat": 48.4758,
-            "lon": -81.3305,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-if",
-            "name": "Iroquois Falls",
-            "lat": 48.7666,
-            "lon": -80.6826,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-coch",
-            "name": "Cochrane",
-            "lat": 49.0593,
-            "lon": -81.0175,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-kl",
-            "name": "Kirkland Lake",
-            "lat": 48.1445,
-            "lon": -80.031,
-            "capacity_bits": 65000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          }
-        ],
-        "balloons": [
-          {
-            "id": "hap-west",
-            "name": "Strato W \u00b7 May trace",
-            "lat": 48.62,
-            "lon": -81.09,
-            "altitude_km": 22.61875,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:may-strato-6h",
-            "trajectory_name": "May5_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.62,
-            "trajectory_start_lon": -81.09,
-            "trajectory_source_lat": 46.16597813,
-            "trajectory_source_lon": -79.07758858
-          },
-          {
-            "id": "hap-central",
-            "name": "Strato C \u00b7 June trace",
-            "lat": 48.8,
-            "lon": -80.72,
-            "altitude_km": 22.07281,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:june-strato-6h",
-            "trajectory_name": "June1_2026_simulation(1).xlsx (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.8,
-            "trajectory_start_lon": -80.72,
-            "trajectory_source_lat": 45.95251688,
-            "trajectory_source_lon": -78.99370555
-          },
-          {
-            "id": "hap-east",
-            "name": "Strato E \u00b7 CSV trace",
-            "lat": 48.44,
-            "lon": -80.3,
-            "altitude_km": 25.0,
-            "coverage_km": 145,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0,
-            "trajectory_id": "builtin:csv-ontario-6h",
-            "trajectory_name": "balloon_sim_data(1).csv (stratospheric excerpt)",
-            "trajectory_duration_seconds": 21600,
-            "trajectory_origin_mode": "shifted",
-            "trajectory_start_lat": 48.44,
-            "trajectory_start_lon": -80.3,
-            "trajectory_source_lat": 49.0,
-            "trajectory_source_lon": -81.0
-          }
-        ],
-        "demands": [
-          {
-            "id": "d-tim-if",
-            "source": "gs-tim",
-            "target": "gs-if",
-            "rate_bps": 2300,
-            "pattern": "dual_peak",
-            "peak_hour": 1.5,
-            "second_peak_hour": 4.7,
-            "peak_width_hours": 0.9,
-            "peak_uplift_pct": 85
-          },
-          {
-            "id": "d-coch-tim",
-            "source": "gs-coch",
-            "target": "gs-tim",
-            "rate_bps": 1700,
-            "pattern": "constant"
-          },
-          {
-            "id": "d-kl-if",
-            "source": "gs-kl",
-            "target": "gs-if",
-            "rate_bps": 1900,
-            "pattern": "bursty",
-            "peak_hour": 0.8,
-            "burst_interval_hours": 2.3,
-            "burst_duration_minutes": 55,
-            "peak_uplift_pct": 90
-          },
-          {
-            "id": "d-coch-kl",
-            "source": "gs-coch",
-            "target": "gs-kl",
-            "rate_bps": 1500,
-            "pattern": "diurnal",
-            "peak_hour": 3.3,
-            "peak_width_hours": 1.2,
-            "peak_uplift_pct": 100
-          },
-          {
-            "id": "d-tim-kl",
-            "source": "gs-tim",
-            "target": "gs-kl",
-            "rate_bps": 1400,
-            "pattern": "dual_peak",
-            "peak_hour": 2,
-            "second_peak_hour": 5,
-            "peak_width_hours": 0.85,
-            "peak_uplift_pct": 75
-          },
-          {
-            "id": "d-if-coch",
-            "source": "gs-if",
-            "target": "gs-coch",
-            "rate_bps": 1800,
-            "pattern": "constant"
-          }
-        ],
-        "weather_regions": [
-          {
-            "id": "wx-front",
-            "name": "Moving rain band",
-            "lat": 48.78,
-            "lon": -80.86,
-            "radius_km": 24,
-            "attenuation_db": 0,
-            "effect": "rain",
-            "precipitation_rate_mm_h": 7,
-            "active_from_seconds": 6000,
-            "active_until_seconds": 15300,
-            "ramp_seconds": 900,
-            "drift_lon_deg_per_hour": 0.07,
-            "drift_lat_deg_per_hour": -0.015
-          },
-          {
-            "id": "wx-fog",
-            "name": "Evening valley fog",
-            "lat": 48.5,
-            "lon": -81.31,
-            "radius_km": 14,
-            "attenuation_db": 0,
-            "effect": "fog",
-            "visibility_km": 0.55,
-            "active_from_seconds": 12600,
-            "active_until_seconds": 20400,
-            "ramp_seconds": 1200
-          }
-        ],
-        "link_overrides": [],
-        "config": {
-          "slot_seconds": 900,
-          "slots": 24,
-          "horizon_seconds": 21600,
-          "allocation_mode": "optimal",
-          "weather_source": "manual",
-          "mcr_samples": 16,
-          "allocator_seed": 42,
-          "channel_workers": 10,
-          "optimality_gap": 0.02,
-          "optimal_time_limit_seconds": 240,
-          "qkp_enabled": true,
-          "optical": {
-            "wavelength_nm": 1550,
-            "beam_waist_m": 0.15,
-            "rx_aperture_down_m": 0.75,
-            "rx_aperture_up_m": 0.4,
-            "obscuration_ratio": 0.3,
-            "cn0": 1e-13,
-            "pointing_error_rad": 1e-07,
-            "tracking_efficiency": 0.85,
-            "detector_efficiency": 0.85,
-            "ao_correction_order": 5,
-            "source_rate_hz": 80000000.0,
-            "source_efficiency": 0.01,
-            "qber": 0.04
-          }
-        }
-      },
-      "duration_note": "Six-hour comparison; May and June use high-altitude flight excerpts.",
-      "milestones": [
-        {
-          "seconds": 5400,
-          "title": "Demand peak",
-          "why": "A high requested-key period tests which routes receive scarce terminals.",
-          "details": "Inspect per-demand served rates and selected routes. This time is scheduled by the synthetic demand profiles; allocation outcomes are computed, not predetermined."
-        },
-        {
-          "seconds": 6300,
-          "title": "Rain enters",
-          "why": "The moving rain region starts affecting optical attenuation where paths intersect it.",
-          "details": "Rain begins at T+1:40 and ramps over 15 minutes. Compare physical link availability and served rates in this and adjacent slots; the same weather is used in all three algorithms."
-        },
-        {
-          "seconds": 13500,
-          "title": "Fog develops",
-          "why": "A second weather constraint tests route choices during reduced visibility.",
-          "details": "Fog begins at T+3:30 and ramps over 20 minutes. Whether a specific link loses capacity depends on HAP position and geometry."
-        },
-        {
-          "seconds": 15300,
-          "title": "Rain clears",
-          "why": "The rain interval ends and link capacity may recover.",
-          "details": "The moving rain band is deactivated after T+4:15. Inspect whether the allocator returns to earlier routes."
-        }
-      ]
-    },
-    {
-      "id": "qkp-enabled",
-      "title": "04 \u00b7 Storm bridge | Optimal + QKP \u00b7 24h",
-      "family": "storm",
-      "angle": "Whole-horizon optimizer with QKP.",
-      "watch": "Follow key moments at T+10:00, T+11:00, and T+15:00; compare measured QKP draw with the paired control.",
-      "scenario": {
-        "ground_stations": [
-          {
-            "id": "gs-if",
-            "name": "Iroquois Falls",
-            "lat": 48.7666,
-            "lon": -80.6826,
-            "capacity_bits": 90000000,
-            "n_tx": 1,
-            "n_rx": 1,
-            "yaw_deg": 0
-          },
-          {
-            "id": "gs-coch",
-            "name": "Cochrane",
-            "lat": 49.0593,
-            "lon": -81.0175,
-            "capacity_bits": 90000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -854,7 +80,7 @@
             "name": "Timmins",
             "lat": 48.4758,
             "lon": -81.3305,
-            "capacity_bits": 90000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -868,9 +94,9 @@
             "lon": -80.99,
             "altitude_km": 25.0,
             "coverage_km": 140,
-            "capacity_bits": 120000000,
-            "n_tx": 1,
-            "n_rx": 1,
+            "capacity_bits": 600000000,
+            "n_tx": 2,
+            "n_rx": 2,
             "yaw_deg": 0,
             "trajectory_id": "builtin:csv-ontario-24h",
             "trajectory_name": "balloon_sim_data(1).csv (complete 24h flight)",
@@ -905,15 +131,15 @@
         "weather_regions": [
           {
             "id": "wx-fog-storm",
-            "name": "Timed fog at Iroquois Falls",
+            "name": "Long-lived fog at Iroquois Falls",
             "lat": 48.7666,
             "lon": -80.6826,
             "radius_km": 16,
             "attenuation_db": 0,
             "effect": "fog",
-            "visibility_km": 0.13,
-            "active_from_seconds": 36000,
-            "active_until_seconds": 54000,
+            "visibility_km": 0.06,
+            "active_from_seconds": 25200,
+            "active_until_seconds": 61200,
             "ramp_seconds": 1800
           },
           {
@@ -925,8 +151,8 @@
             "attenuation_db": 0,
             "effect": "rain",
             "precipitation_rate_mm_h": 5,
-            "active_from_seconds": 39600,
-            "active_until_seconds": 46800,
+            "active_from_seconds": 37800,
+            "active_until_seconds": 48600,
             "ramp_seconds": 1200
           }
         ],
@@ -935,9 +161,9 @@
           "slot_seconds": 600,
           "slots": 144,
           "horizon_seconds": 86400,
-          "allocation_mode": "optimal",
+          "allocation_mode": "scar_q",
           "weather_source": "manual",
-          "mcr_samples": 3,
+          "mcr_samples": 16,
           "allocator_seed": 42,
           "channel_workers": 10,
           "optimality_gap": 0.01,
@@ -960,46 +186,40 @@
           }
         }
       },
-      "duration_note": "Full 24-hour measured CSV trajectory; weather is a constructed schedule.",
+      "duration_note": "Identical 24-hour measured balloon trajectory, ground stations, demands, optics and scheduled weather for every demo; only algorithm or QKP availability varies.",
       "milestones": [
         {
           "seconds": 0,
-          "title": "Clear-sky baseline",
-          "why": "Inspect initial optical generation and QKP inventory before the storm.",
-          "details": "Any stored keys shown here are model-computed. Storage need not rise if capacity or terminal activation limits prevent accumulation."
+          "title": "Clear skies \u00b7 store keys",
+          "why": "Watch route selection while the optical channel is usable.",
+          "details": "The optimizer may store surplus keys; inspect the calculated inventory rather than assuming it fills."
         },
         {
-          "seconds": 36600,
-          "title": "Fog becomes active",
-          "why": "Visibility starts dropping near Iroquois Falls, reducing intersecting optical-link rates.",
-          "details": "Scheduled fog starts at T+10:00 and ramps over 30 minutes toward 0.13 km visibility. It affects only links crossing the modeled weather region."
+          "seconds": 25200,
+          "title": "Fog begins \u00b7 07:00",
+          "why": "Visibility drops on the shared Iroquois Falls link.",
+          "details": "Compare demand service and the physical link rates in the same time slot across all experiments."
         },
         {
-          "seconds": 40200,
-          "title": "Rain becomes active",
-          "why": "A rain cell adds attenuation during the fog event.",
-          "details": "Rain begins at T+11:00, ramps for 20 minutes, and ends at T+13:00. Compare activated optical links and QKP-only traffic; these are measured solver outputs."
+          "seconds": 37800,
+          "title": "Rain overlaps \u00b7 10:30",
+          "why": "Rain also affects the Cochrane link while the fog persists.",
+          "details": "When QKP is enabled, inspect QKP draw; the QKP-disabled case cannot draw from stored inventory."
         },
         {
-          "seconds": 46800,
-          "title": "Rain ends",
-          "why": "Rain attenuation disappears; the fog remains active.",
-          "details": "This separates recovery from rain and the later clearing of fog."
-        },
-        {
-          "seconds": 54000,
-          "title": "Fog clears",
-          "why": "The scheduled fog ends, so optical generation can recover on affected links.",
-          "details": "Compare served keys through T+15:00 and after. For a defensible QKP claim, compare the same slot with the QKP-disabled control."
+          "seconds": 61200,
+          "title": "Weather clears \u00b7 17:00",
+          "why": "Optical links can recover after the constructed weather event.",
+          "details": "Compare total delivered/requested keys and fog-window service, and inspect solver status for the Optimal runs."
         }
       ]
     },
     {
-      "id": "qkp-disabled",
-      "title": "05 \u00b7 Storm control | QKP disabled \u00b7 24h",
-      "family": "storm",
-      "angle": "Identical whole-horizon control with QKP disabled.",
-      "watch": "Follow key moments at T+10:00, T+11:00, and T+15:00; compare measured QKP draw with the paired control.",
+      "id": "corridor-mcr",
+      "title": "02 \u00b7 MCR-Q \u00b7 24h",
+      "family": "same-network",
+      "angle": "Candidate-search slot-by-slot resource allocation with QKP.",
+      "watch": "Compare candidate searches and total delivered keys with SCAR-Q.",
       "scenario": {
         "ground_stations": [
           {
@@ -1007,7 +227,7 @@
             "name": "Iroquois Falls",
             "lat": 48.7666,
             "lon": -80.6826,
-            "capacity_bits": 90000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -1017,7 +237,7 @@
             "name": "Cochrane",
             "lat": 49.0593,
             "lon": -81.0175,
-            "capacity_bits": 90000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -1027,7 +247,7 @@
             "name": "Timmins",
             "lat": 48.4758,
             "lon": -81.3305,
-            "capacity_bits": 90000000,
+            "capacity_bits": 300000000,
             "n_tx": 1,
             "n_rx": 1,
             "yaw_deg": 0
@@ -1041,9 +261,9 @@
             "lon": -80.99,
             "altitude_km": 25.0,
             "coverage_km": 140,
-            "capacity_bits": 120000000,
-            "n_tx": 1,
-            "n_rx": 1,
+            "capacity_bits": 600000000,
+            "n_tx": 2,
+            "n_rx": 2,
             "yaw_deg": 0,
             "trajectory_id": "builtin:csv-ontario-24h",
             "trajectory_name": "balloon_sim_data(1).csv (complete 24h flight)",
@@ -1078,15 +298,15 @@
         "weather_regions": [
           {
             "id": "wx-fog-storm",
-            "name": "Timed fog at Iroquois Falls",
+            "name": "Long-lived fog at Iroquois Falls",
             "lat": 48.7666,
             "lon": -80.6826,
             "radius_km": 16,
             "attenuation_db": 0,
             "effect": "fog",
-            "visibility_km": 0.13,
-            "active_from_seconds": 36000,
-            "active_until_seconds": 54000,
+            "visibility_km": 0.06,
+            "active_from_seconds": 25200,
+            "active_until_seconds": 61200,
             "ramp_seconds": 1800
           },
           {
@@ -1098,8 +318,175 @@
             "attenuation_db": 0,
             "effect": "rain",
             "precipitation_rate_mm_h": 5,
-            "active_from_seconds": 39600,
-            "active_until_seconds": 46800,
+            "active_from_seconds": 37800,
+            "active_until_seconds": 48600,
+            "ramp_seconds": 1200
+          }
+        ],
+        "link_overrides": [],
+        "config": {
+          "slot_seconds": 600,
+          "slots": 144,
+          "horizon_seconds": 86400,
+          "allocation_mode": "mcr_q",
+          "weather_source": "manual",
+          "mcr_samples": 16,
+          "allocator_seed": 42,
+          "channel_workers": 10,
+          "optimality_gap": 0.01,
+          "optimal_time_limit_seconds": 240,
+          "qkp_enabled": true,
+          "optical": {
+            "wavelength_nm": 1550,
+            "beam_waist_m": 0.15,
+            "rx_aperture_down_m": 0.75,
+            "rx_aperture_up_m": 0.4,
+            "obscuration_ratio": 0.3,
+            "cn0": 1e-13,
+            "pointing_error_rad": 1e-07,
+            "tracking_efficiency": 0.85,
+            "detector_efficiency": 0.85,
+            "ao_correction_order": 5,
+            "source_rate_hz": 80000000.0,
+            "source_efficiency": 0.01,
+            "qber": 0.04
+          }
+        }
+      },
+      "duration_note": "Identical 24-hour measured balloon trajectory, ground stations, demands, optics and scheduled weather for every demo; only algorithm or QKP availability varies.",
+      "milestones": [
+        {
+          "seconds": 0,
+          "title": "Clear skies \u00b7 store keys",
+          "why": "Watch route selection while the optical channel is usable.",
+          "details": "The optimizer may store surplus keys; inspect the calculated inventory rather than assuming it fills."
+        },
+        {
+          "seconds": 25200,
+          "title": "Fog begins \u00b7 07:00",
+          "why": "Visibility drops on the shared Iroquois Falls link.",
+          "details": "Compare demand service and the physical link rates in the same time slot across all experiments."
+        },
+        {
+          "seconds": 37800,
+          "title": "Rain overlaps \u00b7 10:30",
+          "why": "Rain also affects the Cochrane link while the fog persists.",
+          "details": "When QKP is enabled, inspect QKP draw; the QKP-disabled case cannot draw from stored inventory."
+        },
+        {
+          "seconds": 61200,
+          "title": "Weather clears \u00b7 17:00",
+          "why": "Optical links can recover after the constructed weather event.",
+          "details": "Compare total delivered/requested keys and fog-window service, and inspect solver status for the Optimal runs."
+        }
+      ]
+    },
+    {
+      "id": "qkp-enabled",
+      "title": "03 \u00b7 Optimal \u00b7 QKP on \u00b7 24h",
+      "family": "same-network",
+      "angle": "Whole-horizon optimal formulation with link-key storage.",
+      "watch": "Watch keys accumulate before the storm and support demand service during it.",
+      "scenario": {
+        "ground_stations": [
+          {
+            "id": "gs-if",
+            "name": "Iroquois Falls",
+            "lat": 48.7666,
+            "lon": -80.6826,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          },
+          {
+            "id": "gs-coch",
+            "name": "Cochrane",
+            "lat": 49.0593,
+            "lon": -81.0175,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          },
+          {
+            "id": "gs-tim",
+            "name": "Timmins",
+            "lat": 48.4758,
+            "lon": -81.3305,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          }
+        ],
+        "balloons": [
+          {
+            "id": "hap-storm",
+            "name": "Strato S \u00b7 CSV trace",
+            "lat": 48.76,
+            "lon": -80.99,
+            "altitude_km": 25.0,
+            "coverage_km": 140,
+            "capacity_bits": 600000000,
+            "n_tx": 2,
+            "n_rx": 2,
+            "yaw_deg": 0,
+            "trajectory_id": "builtin:csv-ontario-24h",
+            "trajectory_name": "balloon_sim_data(1).csv (complete 24h flight)",
+            "trajectory_duration_seconds": 86400,
+            "trajectory_origin_mode": "shifted",
+            "trajectory_start_lat": 48.76,
+            "trajectory_start_lon": -80.99,
+            "trajectory_source_lat": 49.0,
+            "trajectory_source_lon": -81.0
+          }
+        ],
+        "demands": [
+          {
+            "id": "d-if-coch",
+            "source": "gs-if",
+            "target": "gs-coch",
+            "rate_bps": 1400,
+            "pattern": "constant"
+          },
+          {
+            "id": "d-tim-if",
+            "source": "gs-tim",
+            "target": "gs-if",
+            "rate_bps": 800,
+            "pattern": "dual_peak",
+            "peak_hour": 1.2,
+            "second_peak_hour": 12.0,
+            "peak_width_hours": 1.0,
+            "peak_uplift_pct": 60
+          }
+        ],
+        "weather_regions": [
+          {
+            "id": "wx-fog-storm",
+            "name": "Long-lived fog at Iroquois Falls",
+            "lat": 48.7666,
+            "lon": -80.6826,
+            "radius_km": 16,
+            "attenuation_db": 0,
+            "effect": "fog",
+            "visibility_km": 0.06,
+            "active_from_seconds": 25200,
+            "active_until_seconds": 61200,
+            "ramp_seconds": 1800
+          },
+          {
+            "id": "wx-rain-storm",
+            "name": "Passing rain near Cochrane",
+            "lat": 49.045,
+            "lon": -81.02,
+            "radius_km": 18,
+            "attenuation_db": 0,
+            "effect": "rain",
+            "precipitation_rate_mm_h": 5,
+            "active_from_seconds": 37800,
+            "active_until_seconds": 48600,
             "ramp_seconds": 1200
           }
         ],
@@ -1110,7 +497,174 @@
           "horizon_seconds": 86400,
           "allocation_mode": "optimal",
           "weather_source": "manual",
-          "mcr_samples": 3,
+          "mcr_samples": 16,
+          "allocator_seed": 42,
+          "channel_workers": 10,
+          "optimality_gap": 0.01,
+          "optimal_time_limit_seconds": 240,
+          "qkp_enabled": true,
+          "optical": {
+            "wavelength_nm": 1550,
+            "beam_waist_m": 0.15,
+            "rx_aperture_down_m": 0.75,
+            "rx_aperture_up_m": 0.4,
+            "obscuration_ratio": 0.3,
+            "cn0": 1e-13,
+            "pointing_error_rad": 1e-07,
+            "tracking_efficiency": 0.85,
+            "detector_efficiency": 0.85,
+            "ao_correction_order": 5,
+            "source_rate_hz": 80000000.0,
+            "source_efficiency": 0.01,
+            "qber": 0.04
+          }
+        }
+      },
+      "duration_note": "Identical 24-hour measured balloon trajectory, ground stations, demands, optics and scheduled weather for every demo; only algorithm or QKP availability varies.",
+      "milestones": [
+        {
+          "seconds": 0,
+          "title": "Clear skies \u00b7 store keys",
+          "why": "Watch route selection while the optical channel is usable.",
+          "details": "The optimizer may store surplus keys; inspect the calculated inventory rather than assuming it fills."
+        },
+        {
+          "seconds": 25200,
+          "title": "Fog begins \u00b7 07:00",
+          "why": "Visibility drops on the shared Iroquois Falls link.",
+          "details": "Compare demand service and the physical link rates in the same time slot across all experiments."
+        },
+        {
+          "seconds": 37800,
+          "title": "Rain overlaps \u00b7 10:30",
+          "why": "Rain also affects the Cochrane link while the fog persists.",
+          "details": "When QKP is enabled, inspect QKP draw; the QKP-disabled case cannot draw from stored inventory."
+        },
+        {
+          "seconds": 61200,
+          "title": "Weather clears \u00b7 17:00",
+          "why": "Optical links can recover after the constructed weather event.",
+          "details": "Compare total delivered/requested keys and fog-window service, and inspect solver status for the Optimal runs."
+        }
+      ]
+    },
+    {
+      "id": "qkp-disabled",
+      "title": "04 \u00b7 Optimal \u00b7 QKP off \u00b7 24h",
+      "family": "same-network",
+      "angle": "Same whole-horizon solver with link-key storage disabled.",
+      "watch": "Compare the same 24-hour trajectory and severe weather with QKP enabled.",
+      "scenario": {
+        "ground_stations": [
+          {
+            "id": "gs-if",
+            "name": "Iroquois Falls",
+            "lat": 48.7666,
+            "lon": -80.6826,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          },
+          {
+            "id": "gs-coch",
+            "name": "Cochrane",
+            "lat": 49.0593,
+            "lon": -81.0175,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          },
+          {
+            "id": "gs-tim",
+            "name": "Timmins",
+            "lat": 48.4758,
+            "lon": -81.3305,
+            "capacity_bits": 300000000,
+            "n_tx": 1,
+            "n_rx": 1,
+            "yaw_deg": 0
+          }
+        ],
+        "balloons": [
+          {
+            "id": "hap-storm",
+            "name": "Strato S \u00b7 CSV trace",
+            "lat": 48.76,
+            "lon": -80.99,
+            "altitude_km": 25.0,
+            "coverage_km": 140,
+            "capacity_bits": 600000000,
+            "n_tx": 2,
+            "n_rx": 2,
+            "yaw_deg": 0,
+            "trajectory_id": "builtin:csv-ontario-24h",
+            "trajectory_name": "balloon_sim_data(1).csv (complete 24h flight)",
+            "trajectory_duration_seconds": 86400,
+            "trajectory_origin_mode": "shifted",
+            "trajectory_start_lat": 48.76,
+            "trajectory_start_lon": -80.99,
+            "trajectory_source_lat": 49.0,
+            "trajectory_source_lon": -81.0
+          }
+        ],
+        "demands": [
+          {
+            "id": "d-if-coch",
+            "source": "gs-if",
+            "target": "gs-coch",
+            "rate_bps": 1400,
+            "pattern": "constant"
+          },
+          {
+            "id": "d-tim-if",
+            "source": "gs-tim",
+            "target": "gs-if",
+            "rate_bps": 800,
+            "pattern": "dual_peak",
+            "peak_hour": 1.2,
+            "second_peak_hour": 12.0,
+            "peak_width_hours": 1.0,
+            "peak_uplift_pct": 60
+          }
+        ],
+        "weather_regions": [
+          {
+            "id": "wx-fog-storm",
+            "name": "Long-lived fog at Iroquois Falls",
+            "lat": 48.7666,
+            "lon": -80.6826,
+            "radius_km": 16,
+            "attenuation_db": 0,
+            "effect": "fog",
+            "visibility_km": 0.06,
+            "active_from_seconds": 25200,
+            "active_until_seconds": 61200,
+            "ramp_seconds": 1800
+          },
+          {
+            "id": "wx-rain-storm",
+            "name": "Passing rain near Cochrane",
+            "lat": 49.045,
+            "lon": -81.02,
+            "radius_km": 18,
+            "attenuation_db": 0,
+            "effect": "rain",
+            "precipitation_rate_mm_h": 5,
+            "active_from_seconds": 37800,
+            "active_until_seconds": 48600,
+            "ramp_seconds": 1200
+          }
+        ],
+        "link_overrides": [],
+        "config": {
+          "slot_seconds": 600,
+          "slots": 144,
+          "horizon_seconds": 86400,
+          "allocation_mode": "optimal",
+          "weather_source": "manual",
+          "mcr_samples": 16,
           "allocator_seed": 42,
           "channel_workers": 10,
           "optimality_gap": 0.01,
@@ -1133,45 +687,40 @@
           }
         }
       },
-      "duration_note": "Full 24-hour measured CSV trajectory; weather is a constructed schedule.",
+      "duration_note": "Identical 24-hour measured balloon trajectory, ground stations, demands, optics and scheduled weather for every demo; only algorithm or QKP availability varies.",
       "milestones": [
         {
           "seconds": 0,
-          "title": "Clear-sky baseline",
-          "why": "Inspect initial optical generation and QKP inventory before the storm.",
-          "details": "Any stored keys shown here are model-computed. Storage need not rise if capacity or terminal activation limits prevent accumulation."
+          "title": "Clear skies \u00b7 store keys",
+          "why": "Watch route selection while the optical channel is usable.",
+          "details": "The optimizer may store surplus keys; inspect the calculated inventory rather than assuming it fills."
         },
         {
-          "seconds": 36600,
-          "title": "Fog becomes active",
-          "why": "Visibility starts dropping near Iroquois Falls, reducing intersecting optical-link rates.",
-          "details": "Scheduled fog starts at T+10:00 and ramps over 30 minutes toward 0.13 km visibility. It affects only links crossing the modeled weather region."
+          "seconds": 25200,
+          "title": "Fog begins \u00b7 07:00",
+          "why": "Visibility drops on the shared Iroquois Falls link.",
+          "details": "Compare demand service and the physical link rates in the same time slot across all experiments."
         },
         {
-          "seconds": 40200,
-          "title": "Rain becomes active",
-          "why": "A rain cell adds attenuation during the fog event.",
-          "details": "Rain begins at T+11:00, ramps for 20 minutes, and ends at T+13:00. Compare activated optical links and QKP-only traffic; these are measured solver outputs."
+          "seconds": 37800,
+          "title": "Rain overlaps \u00b7 10:30",
+          "why": "Rain also affects the Cochrane link while the fog persists.",
+          "details": "When QKP is enabled, inspect QKP draw; the QKP-disabled case cannot draw from stored inventory."
         },
         {
-          "seconds": 46800,
-          "title": "Rain ends",
-          "why": "Rain attenuation disappears; the fog remains active.",
-          "details": "This separates recovery from rain and the later clearing of fog."
-        },
-        {
-          "seconds": 54000,
-          "title": "Fog clears",
-          "why": "The scheduled fog ends, so optical generation can recover on affected links.",
-          "details": "Compare served keys through T+15:00 and after. For a defensible QKP claim, compare the same slot with the QKP-disabled control."
+          "seconds": 61200,
+          "title": "Weather clears \u00b7 17:00",
+          "why": "Optical links can recover after the constructed weather event.",
+          "details": "Compare total delivered/requested keys and fog-window service, and inspect solver status for the Optimal runs."
         }
       ]
     }
   ],
   "notes": [
-    "The 24-hour CSV trace is available in full for the paired QKP experiments; the three corridor experiments use six-hour stratospheric excerpts.",
-    "Spatially translated tracks are constructed network scenarios, not additional observed flights.",
-    "Timed fog/rain are constructed physical attenuation schedules, not historical ERA5 fields.",
-    "Offline optimizer sees the whole horizon and may return a time-limited incumbent; a QKP advantage is measured, not assumed."
+    "Four curated, matched experiments: SCAR-Q, MCR-Q, Optimal with QKP enabled, and Optimal with QKP disabled.",
+    "All four use the same 24-hour measured balloon trajectory, optical setup, weather, topology, demands, terminal counts, and simulation time grid.",
+    "Algorithm changes only for SCAR-Q/MCR-Q. The two Optimal experiments differ only in qkp_enabled.",
+    "Weather is a constructed 10-hour fog event with overlapping rain. Optical SKR and QKP utilization come from the native channel model and allocator\u2014not predetermined results.",
+    "Percentages should be compared only for successfully completed runs, with optimizer solution status/gap checked for the two Optimal cases."
   ]
 }

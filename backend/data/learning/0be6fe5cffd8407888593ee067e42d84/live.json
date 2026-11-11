@@ -1,0 +1,9 @@
+{
+  "stage": "complete",
+  "episode": 4000,
+  "slots_done": 8,
+  "slots_total": 8,
+  "partial_reward": 0.525,
+  "partial_satisfaction": 0.6831717147172577,
+  "episode_complete": true
+}
